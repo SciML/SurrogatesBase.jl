@@ -1,13 +1,16 @@
 module SurrogatesBase
 
+import Statistics: mean, var
+import Base: rand
+
 # AbstractSurrogate interface
 export AbstractSurrogate,
-    add_point!, add_points!,
+    add_point!,
     update_hyperparameters!, hyperparameters,
-    posterior, posterior_at_point,
-    mean, mean_at_point
-    var, var_at_point,
-    rand, rand_at_point,
+    posterior,
+    mean,
+    var,
+    rand,
     logpdf
 
 abstract type AbstractSurrogate <: Function end
@@ -15,111 +18,112 @@ abstract type AbstractSurrogate <: Function end
 """
     (s::AbstractSurrogate)(x)
 
-Compute an approximation at `x`.
+Compute an approximation at point `x`.
 """
-function (s::AbstractSurrogate)(x) end
+function (s::AbstractSurrogate)(x::AbstractVector) end
 
 """
-    add_point!(s::AbstractSurrogate, new_x, new_y)
+    add_point!(s::AbstractSurrogate, new_x::AbstractVector, new_y)
 
 Add an evaluation `new_y` at point `new_x` to the surrogate.
-
-See also [`add_points!`](@ref).
 """
-function add_point!(s::AbstractSurrogate, new_x, new_y) end
+function add_point!(s::AbstractSurrogate, new_x::AbstractVector, new_y) end
 """
-    add_points!(s::AbstractSurrogate, new_xs, new_ys)
+    add_point!(s::AbstractSurrogate, new_xs::AbstractVector{<:AbstractVector}, new_ys::AbstractVector)
 
 Add evaluations `new_ys` at points `new_xs` to the surrogate.
 
-See also [`add_point!`](@ref).
+Use `add_point!(s, eachslice(X, dims = 2), new_ys)` if `X` is a matrix.
 """
-function add_points!(s::AbstractSurrogate, new_xs, new_ys)
-    length(new_xs) == length(new_ys) ||
-        throw(ArgumentError("new_xs, new_ys have different lengths"))
-    for (x, y) in zip(new_xs, new_ys)
-        add_point!(s, x, y)
-    end
+function add_point!(s::AbstractSurrogate, new_xs::AbstractVector{<:AbstractVector}, new_ys::AbstractVector)
+    add_point!.(Ref(s), new_xs, new_ys )
 end
 
 """
     update_hyperparameters!(s::AbstractSurrogate, prior)
 
-If `s` supports hyperparameters, use `prior` to perform an update.
+Use prior on hyperparameters passed in `prior` to perform an update.
 
 See also [`hyperparameters`](@ref).
 """
-function update_hyperparameters!(s::AbstractSurrogate, prior)
-    error("update_hyperparameters! is not implemented")
-end
+function update_hyperparameters!(s::AbstractSurrogate, prior) end
 
 """
     hyperparameters(s::AbstractSurrogate)
 
-Return a `NamedTuple`, where names are hyperparameters and values are currently used
-values of hyperparameters by `s`.
+Return a `NamedTuple`, in which names are hyperparameters and values are currently used
+values of hyperparameters in `s`.
 
 See also [`update_hyperparameters!`](@ref).
 """
-function hyperparameters(s::AbstractSurrogate)
-    error("access to hyperparameters is not implemented")
+function hyperparameters(s::AbstractSurrogate) end
+
+"""
+    posterior(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
+
+Return a joint posterior at points `xs`.
+
+Use `posterior(s, eachslice(X, dims = 2))` if `X` is a matrix.
+"""
+function posterior(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector}) end
+"""
+    posterior(s::AbstractSurrogate, x::AbstractVector)
+
+Return posterior at point `x`.
+"""
+posterior(s::AbstractSurrogate, x::AbstractVector) = posterior(s, [x])
+
+"""
+    mean(s::AbstractSurrogate, x::AbstractVector)
+
+Return mean at point `x`.
+"""
+function mean(s::AbstractSurrogate, x::AbstractVector) end
+"""
+    mean(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
+
+Return a vector of means at points `xs`.
+
+Use `mean(s, eachslice(X, dims = 2))` if `X` is a matrix.
+"""
+function mean(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
+    mean.(Ref(s), xs)
 end
 
 """
-    posterior(s::AbstractSurrogate, x)
+    var(s::AbstractSurrogate, x::AbstractVector)
 
-Return a joint posterior at `m` points in `x = [x_1, ..., x_m]`.
+Return variance at point `x`.
 """
-posterior(s::AbstractSurrogate, x) = error("posterior is not implemented")
-
-"""
-    posterior_at_point(s::AbstractSurrogate, x)
-
-Return a posterior at point `x`.
-"""
-posterior_at_point(s::AbstractSurrogate, x) = posterior(s, [x])
+function var(s::AbstractSurrogate, x::AbstractVector) end
 
 """
-    mean(s::AbstractSurrogate, x)
+    var(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
 
-For `m` points in `x = [x_1, ..., x_m]`, return a vector of means `[μ_at_x_1, ..., μ_at_x_m]`.
+Return a vector of variances at points `xs`.
 """
-function mean(s::AbstractSurrogate, x) end
+function var(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
+    var.(Ref(s), xs)
+end
 
 """
-    mean_at_point(s::AbstractSurrogate, x)
+    rand(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
 
-For a point `x`, return a mean at `x`.
+Return a sample from the joint posterior at points `xs`.
 """
-mean_at_point(s::AbstractSurrogate, x) = only(mean(s, [x]))
-"""
-    var(s::AbstractSurrogate, x)
+function rand(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})  end
 
-For `m` points in `x = [x_1, ..., x_m]`, return a vector of variances `[σ²_at_x_1, ..., σ²_at_x_m]`
 """
-function var(s::AbstractSurrogate, x) end
-"""
-    var_at_point(s::AbstractSurrogate, x)
+    rand(s::AbstractSurrogate, x::AbstractVector)
 
-For a point `x`, return a variance at `x`.
+Return a sample from the posterior distribution at a point `x`.
 """
-var_at_point(s::AbstractSurrogate, x) = only(var(s, [x]))
-"""
-    rand(s::AbstractSurrogate, x)
+function rand(s::AbstractSurrogate, x::AbstractVector) = only(rand(s::AbstractSurrogate, [x]))
 
-Sample from a joint posterior distribution at `m` points in `x = [x_1, ..., x_m]`.
-"""
-function rand(s::AbstractSurrogate, x) = end
-"""
-    rand_at_point(s::AbstractSurrogate, x)
-
-Sample from a posterior distribution at a point `x`.
-"""
-rand_at_point(s::AbstractSurrogate, x) = rand(s::AbstractSurrogate, [x])
 """
     logpdf(s::AbstractSurrogate)
 
-Log marginal posterior predictive probability.
+Return a log marginal posterior predictive probability.
 """
 function logpdf(s::AbstractSurrogate) end
 
