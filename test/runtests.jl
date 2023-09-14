@@ -1,6 +1,6 @@
 using SurrogatesBase
 import SurrogatesBase: add_point!,
-    supports_hyperparameters, update_hyperparameters!, hyperparameters
+    update_hyperparameters!, hyperparameters
 using Test
 using LinearAlgebra
 
@@ -51,10 +51,8 @@ end
     add_point!(d, [10.3, 0.1], 9.0)
 
     @test d([2.0, 2.0]) == 5.0
-    @test !supports_hyperparameters(d)
     @test_throws ErrorException hyperparameters(d)
     @test_throws ErrorException update_hyperparameters!(d, 5)
-    @test !supports_posterior(d)
     @test_throws ErrorException posterior(d, 5)
 end
 
@@ -66,7 +64,6 @@ end
     add_point!(hd, [1.9, 2.1], 5.0)
     add_point!(hd, [10.3, 0.1], 9.0)
 
-    @test supports_hyperparameters(hd)
     @test hyperparameters(hd).p == 2
     update_hyperparameters!(hd, (; p = 4))
     @test hyperparameters(hd).p == 3

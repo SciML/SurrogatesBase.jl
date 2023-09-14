@@ -3,8 +3,12 @@ module SurrogatesBase
 # AbstractSurrogate interface
 export AbstractSurrogate,
     add_point!, add_points!,
-    supports_hyperparameters, update_hyperparameters!, hyperparameters,
-    supports_posterior, posterior
+    update_hyperparameters!, hyperparameters,
+    posterior, posterior_at_point,
+    mean, mean_at_point
+    var, var_at_point,
+    rand, rand_at_point,
+    logpdf
 
 abstract type AbstractSurrogate <: Function end
 
@@ -39,19 +43,11 @@ function add_points!(s::AbstractSurrogate, new_xs, new_ys)
 end
 
 """
-    supports_hyperparameters(s::AbstractSurrogate)
-
-Return `true` if `s` supports hyperparameters, otherwise return `false`.
-
-See also [`update_hyperparameters!`](@ref), [`hyperparameters`](@ref).
-"""
-supports_hyperparameters(s::AbstractSurrogate) = false
-"""
     update_hyperparameters!(s::AbstractSurrogate, prior)
 
 If `s` supports hyperparameters, use `prior` to perform an update.
 
-See also [`supports_hyperparameters`](@ref),  [`hyperparameters`](@ref).
+See also [`hyperparameters`](@ref).
 """
 function update_hyperparameters!(s::AbstractSurrogate, prior)
     error("update_hyperparameters! is not implemented")
@@ -63,25 +59,68 @@ end
 Return a `NamedTuple`, where names are hyperparameters and values are currently used
 values of hyperparameters by `s`.
 
-See also [`supports_hyperparameters`](@ref),  [`update_hyperparameters!`](@ref).
+See also [`update_hyperparameters!`](@ref).
 """
 function hyperparameters(s::AbstractSurrogate)
     error("access to hyperparameters is not implemented")
 end
 
 """
-    supports_posterior(s::AbstractSurrogate)
-
-Return `true`, if `s` can provide joint posterior distribution, otherwise return `false`.
-
-See also [`posterior`](@ref).
-"""
-supports_posterior(s::AbstractSurrogate) = false
-"""
     posterior(s::AbstractSurrogate, x)
 
-Return a joint posterior at `x = [x_1, ..., x_m]`.
+Return a joint posterior at `m` points in `x = [x_1, ..., x_m]`.
 """
 posterior(s::AbstractSurrogate, x) = error("posterior is not implemented")
+
+"""
+    posterior_at_point(s::AbstractSurrogate, x)
+
+Return a posterior at point `x`.
+"""
+posterior_at_point(s::AbstractSurrogate, x) = posterior(s, [x])
+
+"""
+    mean(s::AbstractSurrogate, x)
+
+For `m` points in `x = [x_1, ..., x_m]`, return a vector of means `[μ_at_x_1, ..., μ_at_x_m]`.
+"""
+function mean(s::AbstractSurrogate, x) end
+
+"""
+    mean_at_point(s::AbstractSurrogate, x)
+
+For a point `x`, return a mean at `x`.
+"""
+mean_at_point(s::AbstractSurrogate, x) = only(mean(s, [x]))
+"""
+    var(s::AbstractSurrogate, x)
+
+For `m` points in `x = [x_1, ..., x_m]`, return a vector of variances `[σ²_at_x_1, ..., σ²_at_x_m]`
+"""
+function var(s::AbstractSurrogate, x) end
+"""
+    var_at_point(s::AbstractSurrogate, x)
+
+For a point `x`, return a variance at `x`.
+"""
+var_at_point(s::AbstractSurrogate, x) = only(var(s, [x]))
+"""
+    rand(s::AbstractSurrogate, x)
+
+Sample from a joint posterior distribution at `m` points in `x = [x_1, ..., x_m]`.
+"""
+function rand(s::AbstractSurrogate, x) = end
+"""
+    rand_at_point(s::AbstractSurrogate, x)
+
+Sample from a posterior distribution at a point `x`.
+"""
+rand_at_point(s::AbstractSurrogate, x) = rand(s::AbstractSurrogate, [x])
+"""
+    logpdf(s::AbstractSurrogate)
+
+Log marginal posterior predictive probability.
+"""
+function logpdf(s::AbstractSurrogate) end
 
 end
