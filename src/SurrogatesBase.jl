@@ -7,11 +7,7 @@ import Base: rand
 export AbstractSurrogate,
     add_point!,
     update_hyperparameters!, hyperparameters,
-    posterior,
-    mean,
-    var,
-    rand,
-    logpdf
+    posterior, mean, var, rand, logpdf
 
 abstract type AbstractSurrogate <: Function end
 
@@ -35,8 +31,10 @@ Add evaluations `new_ys` at points `new_xs` to the surrogate.
 
 Use `add_point!(s, eachslice(X, dims = 2), new_ys)` if `X` is a matrix.
 """
-function add_point!(s::AbstractSurrogate, new_xs::AbstractVector{<:AbstractVector}, new_ys::AbstractVector)
-    add_point!.(Ref(s), new_xs, new_ys )
+function add_point!(s::AbstractSurrogate,
+    new_xs::AbstractVector{<:AbstractVector},
+    new_ys::AbstractVector)
+    add_point!.(Ref(s), new_xs, new_ys)
 end
 
 """
@@ -111,14 +109,14 @@ end
 
 Return a sample from the joint posterior at points `xs`.
 """
-function rand(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})  end
+function rand(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector}) end
 
 """
     rand(s::AbstractSurrogate, x::AbstractVector)
 
 Return a sample from the posterior distribution at a point `x`.
 """
-function rand(s::AbstractSurrogate, x::AbstractVector) = only(rand(s::AbstractSurrogate, [x]))
+rand(s::AbstractSurrogate, x::AbstractVector) = only(rand(s::AbstractSurrogate, [x]))
 
 """
     logpdf(s::AbstractSurrogate)
