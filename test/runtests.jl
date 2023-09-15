@@ -8,12 +8,16 @@ mutable struct DummySurrogate{X, Y} <: AbstractSurrogate
     xs::Vector{X}
     ys::Vector{Y}
 end
+
 # return y value of the closest ξ in xs to x
 (s::DummySurrogate)(x::AbstractVector) = s.ys[argmin(norm(x - ξ) for ξ in s.xs)]
 function add_point!(s::DummySurrogate, new_x, new_y)
     push!(s.xs, new_x)
     push!(s.ys, new_y)
 end
+
+# dummy mean_at_point
+mean_at_point(s::DummySurrogate, x::AbstractVector) = x
 
 mutable struct HyperparameterDummySurrogate{X, Y} <: AbstractSurrogate
     xs::Vector{X}
