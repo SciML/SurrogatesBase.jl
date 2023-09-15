@@ -1,6 +1,6 @@
 using SurrogatesBase
 import SurrogatesBase: add_point!,
-    update_hyperparameters!, hyperparameters
+    update_hyperparameters!, hyperparameters, mean
 using Test
 using LinearAlgebra
 
@@ -16,8 +16,8 @@ function add_point!(s::DummySurrogate, new_x, new_y)
     push!(s.ys, new_y)
 end
 
-# dummy mean_at_point
-mean_at_point(s::DummySurrogate, x::AbstractVector) = x
+# dummy mean at point
+mean(s::DummySurrogate, x::AbstractVector) = x
 
 mutable struct HyperparameterDummySurrogate{X, Y} <: AbstractSurrogate
     xs::Vector{X}
