@@ -9,17 +9,34 @@ export AbstractSurrogate,
     update_hyperparameters!, hyperparameters,
     posterior, mean, var, rand, logpdf
 
+"""
+    abstract type AbstractSurrogate end
+
+An abstract type for defining surrogate interface.
+
+    (s::AbstractSurrogate)(x::AbstractVector)
+
+Subtypes of `AbstractSurrogate` need to be callable with input points `x` that returns
+an approximation at `x`, i.e., evaluates the surrogate at `x`.
+
+ # Examples
+ ```jldoctest
+ julia> struct ZeroSurrogate <: AbstractSurrogate end
+
+ julia> (::ZeroSurrogate)(x::AbstractVector) = 0
+
+ julia> s = ZeroSurrogate()
+ ZeroSurrogate()
+
+ julia> s(rand(5)) == 0
+ true
+ ```
+ """
 abstract type AbstractSurrogate <: Function end
 
 """
-    (s::AbstractSurrogate)(x::AbstractVector)
-
-Compute an approximation at point `x`.
-"""
-function (s::AbstractSurrogate)(x::AbstractVector) end
-
-"""
-    add_point!(s::AbstractSurrogate, new_x::AbstractVector, new_y)
+    add_point!(s::AbstractSurrogate, new_x::AbstractVector, new_y::Number)
+    add_point!(s::AbstractSurrogate, new_x::Union{AbstractVector, Number}, new_y::Number)
 
 Add an evaluation `new_y` at point `new_x` to the surrogate.
 """

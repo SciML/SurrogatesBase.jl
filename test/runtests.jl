@@ -1,6 +1,6 @@
 using SurrogatesBase
 import SurrogatesBase: add_point!,
-    update_hyperparameters!, hyperparameters, mean
+    update_hyperparameters!, hyperparameters, mean, var
 using Test
 using LinearAlgebra
 
@@ -17,13 +17,16 @@ function add_point!(s::DummySurrogate, new_x::AbstractVector, new_y::Number)
 end
 
 # dummy mean at point
-mean(s::DummySurrogate, x::AbstractVector) = x
+mean(s::DummySurrogate, x::AbstractVector{<:Number}) = x
+# dummy variance at more points
+var(s::DummySurrogate, xs::AbstractVector{AbstractVector{<:Number}}) = (x -> x^2).(xs)
 
 mutable struct HyperparameterDummySurrogate{X, Y} <: AbstractSurrogate
     xs::Vector{X}
     ys::Vector{Y}
     θ::NamedTuple
 end
+
 # return y value of the closest ξ in xs to x, in p-norm where p is a hyperparameter
 (s::HyperparameterDummySurrogate)(x) = s.ys[argmin(norm(x - ξ, s.θ.p) for ξ in s.xs)]
 function add_point!(s::HyperparameterDummySurrogate, new_x::AbstractVector, new_y::Number)
@@ -63,9 +66,9 @@ end
     add_point!(d, [10.3, 0.1], 9.0)
 
     @test d([2.0, 2.0]) == 5.0
-    @test_throws ErrorException hyperparameters(d)
-    @test_throws ErrorException update_hyperparameters!(d, 5)
-    @test_throws ErrorException posterior(d, 5)
+    @test_throws MethodError hyperparameters(d)
+    @test_throws MethodError update_hyperparameters!(d, 5)
+    @test_throws MethodError posterior(d, 5)
 end
 
 @testset "hyperparameter interface" begin
