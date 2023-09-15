@@ -14,7 +14,7 @@ export AbstractSurrogate,
 An abstract type for surrogates, parametrized by domain type `D` and
 range type `R` of the underlying function that is being approximated.
 
-    (s::AbstractSurrogate{D, R})(x::D) where {D, R}
+    (s::AbstractSurrogate{D})(x::D) where D
 
 Subtypes of `AbstractSurrogate` need to be callable with input points `x` such that the result
 is an evaluation of the surrogate at `x`.
@@ -23,7 +23,7 @@ is an evaluation of the surrogate at `x`.
  ```jldoctest
  julia> struct ZeroSurrogate{D, R} <: AbstractSurrogate{D, R} end
 
- julia> (::ZeroSurrogate{D,R})(x::D) where {D,R} = 0
+ julia> (::ZeroSurrogate{D})(x::D) where D = 0
 
  julia> s = ZeroSurrogate{Int, Int}()
  ZeroSurrogate{Int64, Int64}()
@@ -73,7 +73,7 @@ See also [`update_hyperparameters!`](@ref).
 function hyperparameters end
 
 """
-    posterior(s::AbstractSurrogate{D, R}, xs::AbstractVector{D}) where {D, R}
+    posterior(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
 
 Return a joint posterior at points `xs`.
 
@@ -81,58 +81,58 @@ Use `posterior(s, eachslice(X, dims = 2))` if `X` is a matrix.
 """
 function posterior end
 """
-    posterior(s::AbstractSurrogate{D, R}, x::D) where {D, R}
+    posterior(s::AbstractSurrogate{D}, x::D) where D
 
 Return posterior at point `x`.
 """
-posterior(s::AbstractSurrogate{D, R}, x::D) where {D, R} = posterior(s, [x])
+posterior(s::AbstractSurrogate{D}, x::D) where D = posterior(s, [x])
 
 """
-    mean(s::AbstractSurrogate{D, R}, x::D) where {D, R}
+    mean(s::AbstractSurrogate{D}, x::D) where D
 
 Return mean at point `x`.
 """
 function mean end
 """
-    mean(s::AbstractSurrogate{D, R}, xs::AbstractVector{D}) where {D, R}
+    mean(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
 
 Return a vector of means at points `xs`.
 
 Use `mean(s, eachslice(X, dims = 2))` if `X` is a matrix.
 """
-function mean(s::AbstractSurrogate{D, R}, xs::AbstractVector{D}) where {D, R}
+function mean(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
     mean.(Ref(s), xs)
 end
 
 """
-    var(s::AbstractSurrogate{D, R}, x::D) where {D, R}
+    var(s::AbstractSurrogate{D}, x::D) where D
 
 Return variance at point `x`.
 """
 function var end
 
 """
-    var(s::AbstractSurrogate{D, R}, xs::AbstractVector{D}) where {D, R}
+    var(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
 
 Return a vector of variances at points `xs`.
 """
-function var(s::AbstractSurrogate{D, R}, xs::AbstractVector{D}) where {D, R}
+function var(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
     var.(Ref(s), xs)
 end
 
 """
-    rand(s::AbstractSurrogate{D, R}, xs::AbstractVector{D}) where {D, R}
+    rand(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
 
 Return a sample from the joint posterior at points `xs`.
 """
 function rand end
 
 """
-    rand(s::AbstractSurrogate{D,R}, x::D)
+    rand(s::AbstractSurrogate{D}, x::D) where D
 
 Return a sample from the posterior distribution at a point `x`.
 """
-rand(s::AbstractSurrogate{D, R}, x::D) where {D, R} = only(rand(s::AbstractSurrogate, [x]))
+rand(s::AbstractSurrogate{D}, x::D) where D = only(rand(s::AbstractSurrogate, [x]))
 
 """
     logpdf(s::AbstractSurrogate)
