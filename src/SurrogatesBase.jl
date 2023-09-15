@@ -5,11 +5,18 @@ import Base: rand
 
 # AbstractSurrogate interface
 export AbstractSurrogate,
-    add_point!,
+    add_point!, add_points!,
     update_hyperparameters!, hyperparameters,
-    posterior, mean, var, rand, logpdf
+    posterior, posterior_at_point,
+    mean, mean_at_point,
+    var, var_at_point,
+    rand, rand_at_point,
+    logpdf
 
 abstract type AbstractSurrogate <: Function end
+
+# setup broadcasting used in, e.g., default implementation of add_points!
+Base.broadcastable(s::AbstractSurrogate) = Ref(s)
 
 """
     (s::AbstractSurrogate)(x::AbstractVector)
@@ -25,16 +32,16 @@ Add an evaluation `new_y` at point `new_x` to the surrogate.
 """
 function add_point! end
 """
-    add_point!(s::AbstractSurrogate, new_xs::AbstractVector{<:AbstractVector}, new_ys::AbstractVector)
+    add_points!(s::AbstractSurrogate, new_xs::AbstractVector{<:AbstractVector}, new_ys::AbstractVector)
 
 Add evaluations `new_ys` at points `new_xs` to the surrogate.
 
-Use `add_point!(s, eachslice(X, dims = 2), new_ys)` if `X` is a matrix.
+Use `add_points!(s, eachslice(X, dims = 2), new_ys)` if `X` is a matrix.
 """
-function add_point!(s::AbstractSurrogate,
+function add_points!(s::AbstractSurrogate,
     new_xs::AbstractVector{<:AbstractVector},
     new_ys::AbstractVector)
-    add_point!.(Ref(s), new_xs, new_ys)
+    add_point!.(s, new_xs, new_ys)
 end
 
 """
@@ -65,18 +72,18 @@ Use `posterior(s, eachslice(X, dims = 2))` if `X` is a matrix.
 """
 function posterior end
 """
-    posterior(s::AbstractSurrogate, x::AbstractVector)
+    posterior_at_point(s::AbstractSurrogate, x::AbstractVector)
 
 Return posterior at point `x`.
 """
-posterior(s::AbstractSurrogate, x::AbstractVector) = posterior(s, [x])
+posterior_at_point(s::AbstractSurrogate, x::AbstractVector) = posterior(s, [x])
 
 """
-    mean(s::AbstractSurrogate, x::AbstractVector)
+    mean_at_point(s::AbstractSurrogate, x::AbstractVector)
 
 Return mean at point `x`.
 """
-function mean end
+function mean_at_point end
 """
     mean(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
 
@@ -85,15 +92,15 @@ Return a vector of means at points `xs`.
 Use `mean(s, eachslice(X, dims = 2))` if `X` is a matrix.
 """
 function mean(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
-    mean.(Ref(s), xs)
+    mean_at_point.(s, xs)
 end
 
 """
-    var(s::AbstractSurrogate, x::AbstractVector)
+    var_at_point(s::AbstractSurrogate, x::AbstractVector)
 
 Return variance at point `x`.
 """
-function var end
+function var_at_point end
 
 """
     var(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
@@ -101,7 +108,7 @@ function var end
 Return a vector of variances at points `xs`.
 """
 function var(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
-    var.(Ref(s), xs)
+    var_at_point.(s, xs)
 end
 
 """
@@ -112,11 +119,13 @@ Return a sample from the joint posterior at points `xs`.
 function rand end
 
 """
-    rand(s::AbstractSurrogate, x::AbstractVector)
+    rand_at_point(s::AbstractSurrogate, x::AbstractVector)
 
 Return a sample from the posterior distribution at a point `x`.
 """
-rand(s::AbstractSurrogate, x::AbstractVector) = only(rand(s::AbstractSurrogate, [x]))
+function rand_at_point(s::AbstractSurrogate, x::AbstractVector)
+    only(rand(s::AbstractSurrogate, [x]))
+end
 
 """
     logpdf(s::AbstractSurrogate)

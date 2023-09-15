@@ -1,6 +1,7 @@
 using SurrogatesBase
 import SurrogatesBase: add_point!,
-    update_hyperparameters!, hyperparameters
+    update_hyperparameters!, hyperparameters,
+    mean, mean_at_point
 using Test
 using LinearAlgebra
 
@@ -14,6 +15,9 @@ function add_point!(s::DummySurrogate, new_x, new_y)
     push!(s.xs, new_x)
     push!(s.ys, new_y)
 end
+
+# dummy mean_at_point
+mean_at_point(s::DummySurrogate, x::AbstractVector) = x
 
 mutable struct HyperparameterDummySurrogate{X, Y} <: AbstractSurrogate
     xs::Vector{X}
@@ -33,23 +37,23 @@ function update_hyperparameters!(s::HyperparameterDummySurrogate, prior)
     s.θ = (; p = (s.θ.p + prior.p) / 2)
 end
 
-
 @testset "add_point! with broadcasting implementation" begin
     # use DummySurrogate
     d = DummySurrogate(Vector{Vector{Float64}}(), Vector{Int}())
     add_point!(d, [1.9, 2.1], 5)
     add_point!(d, [10.3, 0.1], 9)
-    add_point!(d, [[-0.3, 9.9], [-0.1, -10.0]], [1, 3])
+    add_points!(d, [[-0.3, 9.9], [-0.1, -10.0]], [1, 3])
     # check if add_points! added points correctly
     @test length(d.xs) == 4
     @test d([0.0, -9.9]) == 3
 end
 
-@testset "mean with broadcasting" begin
-      # use DummySurrogate
+@testset "mean, mean_at_point" begin
+    # use DummySurrogate
     d = DummySurrogate(Vector{Vector{Float64}}(), Vector{Int}())
     add_point!(d, [1.9, 2.1], 5)
-    @test mean(d, [[1., 4. ], [5.,6.]]) == [[1., 4. ], [5.,6.]]
+    @test mean_at_point(d, [1.0, 5.0]) == [1.0, 5.0]
+    @test mean(d, [[1.0, 4.0], [5.0, 6.0]]) == [[1.0, 4.0], [5.0, 6.0]]
 end
 
 @testset "default implementations" begin
@@ -59,9 +63,9 @@ end
     add_point!(d, [10.3, 0.1], 9.0)
 
     @test d([2.0, 2.0]) == 5.0
-    @test_throws ErrorException hyperparameters(d)
-    @test_throws ErrorException update_hyperparameters!(d, 5)
-    @test_throws ErrorException posterior(d, 5)
+    @test_throws MethodError hyperparameters(d)
+    @test_throws MethodError update_hyperparameters!(d, 5)
+    @test_throws MethodError posterior(d, 5)
 end
 
 @testset "hyperparameter interface" begin
