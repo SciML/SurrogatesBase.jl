@@ -11,13 +11,13 @@ export AbstractSurrogate,
 """
     abstract type AbstractSurrogate{D, R} end
 
-An abstract type for surrogate interface, parametrized by domain type `D` and
+An abstract type for surrogates, parametrized by domain type `D` and
 range type `R` of the underlying function that is being approximated.
 
     (s::AbstractSurrogate{D, R})(x::D) where {D, R}
 
-Subtypes of `AbstractSurrogate` need to be callable with input points `x` that
-evaluates the surrogate at `x`.
+Subtypes of `AbstractSurrogate` need to be callable with input points `x` such that the result
+is an evaluation of the surrogate at `x`.
 
  # Examples
  ```jldoctest
@@ -132,7 +132,7 @@ function rand end
 
 Return a sample from the posterior distribution at a point `x`.
 """
-rand(s::AbstractSurrogate{D, R}, x::D) where {D, R}= only(rand(s::AbstractSurrogate, [x]))
+rand(s::AbstractSurrogate{D, R}, x::D) where {D, R} = only(rand(s::AbstractSurrogate, [x]))
 
 """
     logpdf(s::AbstractSurrogate)
