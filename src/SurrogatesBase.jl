@@ -12,7 +12,7 @@ export AbstractSurrogate,
 abstract type AbstractSurrogate <: Function end
 
 """
-    (s::AbstractSurrogate)(x)
+    (s::AbstractSurrogate)(x::AbstractVector)
 
 Compute an approximation at point `x`.
 """
@@ -23,7 +23,7 @@ function (s::AbstractSurrogate)(x::AbstractVector) end
 
 Add an evaluation `new_y` at point `new_x` to the surrogate.
 """
-function add_point!(s::AbstractSurrogate, new_x::AbstractVector, new_y) end
+function add_point! end
 """
     add_point!(s::AbstractSurrogate, new_xs::AbstractVector{<:AbstractVector}, new_ys::AbstractVector)
 
@@ -44,7 +44,7 @@ Use prior on hyperparameters passed in `prior` to perform an update.
 
 See also [`hyperparameters`](@ref).
 """
-function update_hyperparameters!(s::AbstractSurrogate, prior) end
+function update_hyperparameters! end
 
 """
     hyperparameters(s::AbstractSurrogate)
@@ -54,7 +54,7 @@ values of hyperparameters in `s`.
 
 See also [`update_hyperparameters!`](@ref).
 """
-function hyperparameters(s::AbstractSurrogate) end
+function hyperparameters end
 
 """
     posterior(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
@@ -63,7 +63,7 @@ Return a joint posterior at points `xs`.
 
 Use `posterior(s, eachslice(X, dims = 2))` if `X` is a matrix.
 """
-function posterior(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector}) end
+function posterior end
 """
     posterior(s::AbstractSurrogate, x::AbstractVector)
 
@@ -76,7 +76,7 @@ posterior(s::AbstractSurrogate, x::AbstractVector) = posterior(s, [x])
 
 Return mean at point `x`.
 """
-function mean(s::AbstractSurrogate, x::AbstractVector) end
+function mean end
 """
     mean(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
 
@@ -93,7 +93,7 @@ end
 
 Return variance at point `x`.
 """
-function var(s::AbstractSurrogate, x::AbstractVector) end
+function var end
 
 """
     var(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
@@ -109,7 +109,7 @@ end
 
 Return a sample from the joint posterior at points `xs`.
 """
-function rand(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector}) end
+function rand end
 
 """
     rand(s::AbstractSurrogate, x::AbstractVector)
@@ -123,6 +123,6 @@ rand(s::AbstractSurrogate, x::AbstractVector) = only(rand(s::AbstractSurrogate, 
 
 Return a log marginal posterior predictive probability.
 """
-function logpdf(s::AbstractSurrogate) end
+function logpdf end
 
 end
