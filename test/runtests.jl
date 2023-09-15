@@ -90,6 +90,7 @@ end
     @test length(d.xs) == 4
 end
 
+# mutable b/c of hyperparameters in θ that change
 mutable struct HyperparameterDummySurrogate{D, R} <: AbstractSurrogate{D, R}
     xs::Vector{D}
     ys::Vector{R}
