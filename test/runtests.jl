@@ -11,7 +11,7 @@ end
 
 # return y value of the closest ξ in xs to x
 (s::DummySurrogate)(x::AbstractVector) = s.ys[argmin(norm(x - ξ) for ξ in s.xs)]
-function add_point!(s::DummySurrogate, new_x, new_y)
+function add_point!(s::DummySurrogate, new_x::AbstractVector, new_y::Number)
     push!(s.xs, new_x)
     push!(s.ys, new_y)
 end
@@ -26,7 +26,7 @@ mutable struct HyperparameterDummySurrogate{X, Y} <: AbstractSurrogate
 end
 # return y value of the closest ξ in xs to x, in p-norm where p is a hyperparameter
 (s::HyperparameterDummySurrogate)(x) = s.ys[argmin(norm(x - ξ, s.θ.p) for ξ in s.xs)]
-function add_point!(s::HyperparameterDummySurrogate, new_x, new_y)
+function add_point!(s::HyperparameterDummySurrogate, new_x::AbstractVector, new_y::Number)
     push!(s.xs, new_x)
     push!(s.ys, new_y)
 end
