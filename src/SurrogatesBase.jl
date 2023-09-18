@@ -16,8 +16,9 @@ range type `R` of the underlying function that is being approximated.
 
     (s::AbstractSurrogate{D})(x::D) where D
 
-Subtypes of `AbstractSurrogate` need to be callable with input points `x` such that the result
-is an evaluation of the surrogate at `x`.
+Subtypes of `AbstractSurrogate` can be callable with input points `x` such that the result
+is an evaluation of the surrogate at `x`, corresponding to an approximation of the underlying
+function at `x`.
 
  # Examples
  ```jldoctest
