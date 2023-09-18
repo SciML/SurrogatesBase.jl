@@ -25,7 +25,7 @@ end
 function mean(s::DummySurrogate{D}, x::D) where {D <: AbstractVector}
     norm(x)
 end
-# mean for 1D surrogate
+# dummy mean at point for 1D surrogate
 mean(s::DummySurrogate{D}, x::D) where {D <: Number} = x
 # dummy variance at point
 var(s::DummySurrogate{D}, x::D) where {D} = 5
