@@ -85,7 +85,7 @@ function posterior end
 
 Return posterior at point `x`.
 """
-posterior(s::AbstractSurrogate{D}, x::D) where D = posterior(s, [x])
+posterior(s::AbstractSurrogate{D}, x::D) where {D} = posterior(s, [x])
 
 """
     mean(s::AbstractSurrogate{D}, x::D) where D
@@ -100,7 +100,7 @@ Return a vector of means at points `xs`.
 
 Use `mean(s, eachslice(X, dims = 2))` if `X` is a matrix.
 """
-function mean(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
+function mean(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where {D}
     mean.(Ref(s), xs)
 end
 
@@ -116,7 +116,7 @@ function var end
 
 Return a vector of variances at points `xs`.
 """
-function var(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
+function var(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where {D}
     var.(Ref(s), xs)
 end
 
@@ -132,6 +132,6 @@ function rand end
 
 Return a sample from the posterior distribution at a point `x`.
 """
-rand(s::AbstractSurrogate{D}, x::D) where D = only(rand(s::AbstractSurrogate, [x]))
+rand(s::AbstractSurrogate{D}, x::D) where {D} = only(rand(s::AbstractSurrogate, [x]))
 
 end

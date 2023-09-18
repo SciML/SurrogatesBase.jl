@@ -13,7 +13,7 @@ struct DummySurrogate{D, R} <: AbstractSurrogate{D, R}
 end
 
 # return y value of the closest ξ in xs to x
-function (s::DummySurrogate{D})(x::D) where D <: Vector
+function (s::DummySurrogate{D})(x::D) where {D <: Vector}
     s.ys[argmin(norm(x - ξ) for ξ in s.xs)]
 end
 function add_point!(s::DummySurrogate{D, R}, new_x::D, new_y::R) where {D, R}
@@ -22,22 +22,22 @@ function add_point!(s::DummySurrogate{D, R}, new_x::D, new_y::R) where {D, R}
 end
 
 # dummy mean at point
-function mean(s::DummySurrogate{D},  x::D) where D <: AbstractVector
+function mean(s::DummySurrogate{D}, x::D) where {D <: AbstractVector}
     norm(x)
 end
 # mean for 1D surrogate
-mean(s::DummySurrogate{D}, x::D) where D <: Number = x
+mean(s::DummySurrogate{D}, x::D) where {D <: Number} = x
 # dummy variance at point
-var(s::DummySurrogate{D}, x::D) where D = 5
+var(s::DummySurrogate{D}, x::D) where {D} = 5
 # dummy variance at more points
-var(s::DummySurrogate{D}, xs::Vector{D}) where D = ones(Base.length(xs))
+var(s::DummySurrogate{D}, xs::Vector{D}) where {D} = ones(Base.length(xs))
 # dummy rand from joint posterior
 function rand(s::DummySurrogate{D},
-    xs::Vector{D}) where D <: Union{<:Number, <:Vector}
+    xs::Vector{D}) where {D <: Union{<:Number, <:Vector}}
     rand(length(xs))
 end
 # dummy joint posterior
-posterior(s::DummySurrogate{D}, x::Vector{D}) where D = ones(Int, length(x))
+posterior(s::DummySurrogate{D}, x::Vector{D}) where {D} = ones(Int, length(x))
 
 @testset "add_point! with broadcasting implementation" begin
     d = DummySurrogate(Vector{Vector{Float64}}(), Vector{Int}())
@@ -85,15 +85,15 @@ end
     add_point!(d, [2.0, 3.0, 4.0], [4.0, 5.0, 6.0])
     @test length(d.xs) == 4
     # 1d mean
-    @test mean(d, 3.) == 3
+    @test mean(d, 3.0) == 3
 end
 
 @testset "posterior" begin
     d = DummySurrogate(Vector{Vector{Float64}}(), Vector{Float32}())
     add_point!(d, [1.9, 2.1], 5.9f0)
-    @test length( posterior(d, [[1.,3.],[4.,5.]]) ) == 2
+    @test length(posterior(d, [[1.0, 3.0], [4.0, 5.0]])) == 2
     # test default implementation
-    @test posterior(d, [1.,3.]) == [1]
+    @test posterior(d, [1.0, 3.0]) == [1]
 end
 
 # mutable b/c of hyperparameters in θ that change
@@ -103,7 +103,9 @@ mutable struct HyperparameterDummySurrogate{D, R} <: AbstractSurrogate{D, R}
     θ::NamedTuple
 end
 # return y value of the closest ξ in xs to x, in p-norm where p is a hyperparameter
-(s::HyperparameterDummySurrogate{D})(x::D) where D <: Vector = s.ys[argmin(norm(x - ξ, s.θ.p) for ξ in s.xs)]
+function (s::HyperparameterDummySurrogate{D})(x::D) where {D <: Vector}
+    s.ys[argmin(norm(x - ξ, s.θ.p) for ξ in s.xs)]
+end
 function add_point!(s::HyperparameterDummySurrogate{D, R}, new_x::D, new_y::R) where {D, R}
     push!(s.xs, new_x)
     push!(s.ys, new_y)
