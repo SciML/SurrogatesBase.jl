@@ -2,7 +2,7 @@ using SurrogatesBase
 import SurrogatesBase:
     add_point!,
     update_hyperparameters!, hyperparameters,
-    posterior, mean, var, rand, logpdf
+    posterior, mean, var, rand
 
 using Test
 using LinearAlgebra
@@ -31,8 +31,6 @@ mean(s::DummySurrogate{D}, x::D) where D <: Number = x
 var(s::DummySurrogate{D}, x::D) where D = 5
 # dummy variance at more points
 var(s::DummySurrogate{D}, xs::Vector{D}) where D = ones(Base.length(xs))
-# dummy logpdf
-logpdf(s::DummySurrogate) = 0.5
 # dummy rand from joint posterior
 function rand(s::DummySurrogate{D},
     xs::Vector{D}) where D <: Union{<:Number, <:Vector}
@@ -65,12 +63,6 @@ end
     add_point!(d, [1.9, 2.1], 5)
     @test isapprox(mean(d, [1.0, 4.0]), norm([1.0, 4.0]))
     @test isapprox(mean(d, [[1.0, 4.0], [5.0, 6.0]]), [norm([1.0, 4.0]), norm([5.0, 6.0])])
-end
-
-@testset "logpdf" begin
-    d = DummySurrogate(Vector{Vector{Float64}}(), Vector{Float64}())
-    add_point!(d, [1.9, 2.1], 5.9)
-    @test logpdf(d) == 0.5
 end
 
 @testset "not implemented methods that are not imported in SurrogatsBase throw an error" begin

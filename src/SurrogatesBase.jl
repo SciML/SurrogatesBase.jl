@@ -6,7 +6,7 @@ import Base: rand
 export AbstractSurrogate,
     add_point!,
     update_hyperparameters!, hyperparameters,
-    posterior, mean, var, rand, logpdf
+    posterior, mean, var, rand
 
 """
     abstract type AbstractSurrogate{D, R} end
@@ -133,12 +133,5 @@ function rand end
 Return a sample from the posterior distribution at a point `x`.
 """
 rand(s::AbstractSurrogate{D}, x::D) where D = only(rand(s::AbstractSurrogate, [x]))
-
-"""
-    logpdf(s::AbstractSurrogate)
-
-Return a log marginal posterior predictive probability.
-"""
-function logpdf end
 
 end
