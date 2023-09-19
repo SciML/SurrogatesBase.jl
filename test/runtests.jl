@@ -88,7 +88,7 @@ end
 @testset "default mean_and_var, 1-dimensional surrogate" begin
     d = DummySurrogate(Vector{Float64}(), Vector{Float64}())
     add_point!(d, 1.0, 3.0)
-    μ, σ² = mean_and_var(d, 4.)
+    μ, σ² = mean_and_var(d, 4.0)
     @test isa(μ, Number)
     @test isa(σ², Number)
 
@@ -102,11 +102,11 @@ end
 @testset "default mean_and_var, 2-dimensional surrogate" begin
     d = DummySurrogate(Vector{Vector{Float64}}(), Vector{Float32}())
     add_point!(d, [1.9, 2.1], 5.9f0)
-    μ, σ² = mean_and_var(d,  [1.5, 2.5])
+    μ, σ² = mean_and_var(d, [1.5, 2.5])
     @test isa(μ, Number)
     @test isa(σ², Number)
 
-    μs, σ²s = mean_and_var(d, [ [1.5, 2.5], [5.,6.]])
+    μs, σ²s = mean_and_var(d, [[1.5, 2.5], [5.0, 6.0]])
     @test isa(μs, Vector{<:Number})
     @test isa(σ²s, Vector{<:Number})
     @test length(μs) == 2

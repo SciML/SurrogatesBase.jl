@@ -126,8 +126,8 @@ rand(s::AbstractSurrogate{D}, x::D) where {D} = only(rand(s::AbstractSurrogate, 
 
 Return a Tuple of mean and variance at point `x`.
 """
-function mean_and_var(s::AbstractSurrogate{D}, x::D) where D
-    mean(s,x), var(s,x)
+function mean_and_var(s::AbstractSurrogate{D}, x::D) where {D}
+    mean(s, x), var(s, x)
 end
 
 """
@@ -135,8 +135,8 @@ end
 
 Return a Tuple of vector of means and vector of variances at points `xs`.
 """
-function mean_and_var(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
-    mean(s,xs), var(s,xs)
+function mean_and_var(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where {D}
+    mean(s, xs), var(s, xs)
 end
 
 end
