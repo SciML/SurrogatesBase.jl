@@ -2,7 +2,7 @@ using SurrogatesBase
 import SurrogatesBase:
     add_point!,
     update_hyperparameters!, hyperparameters,
-    posterior, mean, var, rand
+    mean, var, rand, mean_and_var
 
 using Test
 using LinearAlgebra
@@ -36,8 +36,6 @@ function rand(s::DummySurrogate{D},
     xs::Vector{D}) where {D <: Union{<:Number, <:Vector}}
     rand(length(xs))
 end
-# dummy joint posterior
-posterior(s::DummySurrogate{D}, x::Vector{D}) where {D} = ones(Int, length(x))
 
 @testset "add_point! with broadcasting implementation" begin
     d = DummySurrogate(Vector{Vector{Float64}}(), Vector{Int}())
@@ -70,7 +68,6 @@ end
     add_point!(d, [1.9, 2.1], 5.9)
     @test_throws MethodError hyperparameters(d)
     @test_throws MethodError update_hyperparameters!(d, 5)
-    @test_throws MethodError posterior(d, 5)
 end
 
 @testset "rand, test default pointwise implementation" begin
@@ -88,12 +85,32 @@ end
     @test mean(d, 3.0) == 3
 end
 
-@testset "posterior" begin
+@testset "default mean_and_var, 1-dimensional surrogate" begin
+    d = DummySurrogate(Vector{Float64}(), Vector{Float64}())
+    add_point!(d, 1.0, 3.0)
+    μ, σ² = mean_and_var(d, 4.)
+    @test isa(μ, Number)
+    @test isa(σ², Number)
+
+    μs, σ²s = mean_and_var(d, [1.5, 2.5])
+    @test isa(μs, Vector{<:Number})
+    @test isa(σ²s, Vector{<:Number})
+    @test length(μs) == 2
+    @test length(σ²s) == 2
+end
+
+@testset "default mean_and_var, 2-dimensional surrogate" begin
     d = DummySurrogate(Vector{Vector{Float64}}(), Vector{Float32}())
     add_point!(d, [1.9, 2.1], 5.9f0)
-    @test length(posterior(d, [[1.0, 3.0], [4.0, 5.0]])) == 2
-    # test default implementation
-    @test posterior(d, [1.0, 3.0]) == [1]
+    μ, σ² = mean_and_var(d,  [1.5, 2.5])
+    @test isa(μ, Number)
+    @test isa(σ², Number)
+
+    μs, σ²s = mean_and_var(d, [ [1.5, 2.5], [5.,6.]])
+    @test isa(μs, Vector{<:Number})
+    @test isa(σ²s, Vector{<:Number})
+    @test length(μs) == 2
+    @test length(σ²s) == 2
 end
 
 # mutable b/c of hyperparameters in θ that change
