@@ -2,12 +2,11 @@ module SurrogatesBase
 
 import Statistics: mean, var
 import Base: rand
-import StatsBase.mean_and_var
+import StatsBase: mean_and_var
 
-export AbstractSurrogate,
-    add_point!,
-    update_hyperparameters!, hyperparameters,
-    mean, var, rand, mean_and_var
+export AbstractSurrogate, add_point!
+export update_hyperparameters!, hyperparameters
+export mean, var, mean_and_var, rand
 
 """
     abstract type AbstractSurrogate{D, R} end
@@ -108,20 +107,6 @@ function var(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where {D}
 end
 
 """
-    rand(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
-
-Return a sample from the joint posterior at points `xs`.
-"""
-function rand end
-
-"""
-    rand(s::AbstractSurrogate{D}, x::D) where D
-
-Return a sample from the posterior distribution at a point `x`.
-"""
-rand(s::AbstractSurrogate{D}, x::D) where {D} = only(rand(s::AbstractSurrogate, [x]))
-
-"""
     mean_and_var(s::AbstractSurrogate{D}, x::D) where D
 
 Return a Tuple of mean and variance at point `x`.
@@ -138,5 +123,19 @@ Return a Tuple of vector of means and vector of variances at points `xs`.
 function mean_and_var(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where {D}
     mean(s, xs), var(s, xs)
 end
+
+"""
+    rand(s::AbstractSurrogate{D}, xs::AbstractVector{D}) where D
+
+Return a sample from the joint posterior at points `xs`.
+"""
+function rand end
+
+"""
+    rand(s::AbstractSurrogate{D}, x::D) where D
+
+Return a sample from the posterior distribution at a point `x`.
+"""
+rand(s::AbstractSurrogate{D}, x::D) where {D} = only(rand(s::AbstractSurrogate, [x]))
 
 end

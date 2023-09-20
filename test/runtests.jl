@@ -1,8 +1,7 @@
 using SurrogatesBase
-import SurrogatesBase:
-    add_point!,
+import SurrogatesBase: add_point!,
     update_hyperparameters!, hyperparameters,
-    mean, var, rand, mean_and_var
+    mean, var, mean_and_var, rand
 
 using Test
 using LinearAlgebra
