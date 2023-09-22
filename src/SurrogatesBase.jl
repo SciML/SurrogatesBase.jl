@@ -2,46 +2,61 @@ module SurrogatesBase
 
 import Statistics: mean, var
 import Base: rand
+import StatsBase: mean_and_var
 
 # AbstractSurrogate interface
-export AbstractSurrogate,
-    add_point!, add_points!,
-    update_hyperparameters!, hyperparameters,
-    posterior, posterior_at_point,
-    mean, mean_at_point,
-    var, var_at_point,
-    rand, rand_at_point,
-    logpdf
+export AbstractSurrogate
+export add_point!, add_points!
+export update_hyperparameters!, hyperparameters
+export mean, mean_at_point
+export var, var_at_point
+export mean_and_var, mean_and_var_at_point
+export rand, rand_at_point
 
+"""
+    abstract type AbstractSurrogate end
+
+An abstract type for formalizing surrogates.
+
+    (s::AbstractSurrogate)(x)
+
+Subtypes of `AbstractSurrogate` can be callable with input points `x` such that the result
+is an evaluation of the surrogate at `x`, corresponding to an approximation of the underlying
+function at `x`.
+
+ # Examples
+ ```jldoctest
+ julia> struct ZeroSurrogate <: AbstractSurrogate end
+
+ julia> (::ZeroSurrogate)(x) = 0
+
+ julia> s = ZeroSurrogate()
+ ZeroSurrogate()
+
+ julia> s(4) == 0
+ true
+ ```
+"""
 abstract type AbstractSurrogate <: Function end
 
-# setup broadcasting used in, e.g., default implementation of add_points!
-Base.broadcastable(s::AbstractSurrogate) = Ref(s)
-
 """
-    (s::AbstractSurrogate)(x::AbstractVector)
-
-Compute an approximation at point `x`.
-"""
-function (s::AbstractSurrogate)(x::AbstractVector) end
-
-"""
-    add_point!(s::AbstractSurrogate, new_x::AbstractVector, new_y)
+    add_point!(s::AbstractSurrogate, new_x, new_y)
 
 Add an evaluation `new_y` at point `new_x` to the surrogate.
 """
 function add_point! end
+
 """
-    add_points!(s::AbstractSurrogate, new_xs::AbstractVector{<:AbstractVector}, new_ys::AbstractVector)
+    add_points!(s::AbstractSurrogate, new_xs::AbstractVector, new_ys::AbstractVector)
 
 Add evaluations `new_ys` at points `new_xs` to the surrogate.
 
 Use `add_points!(s, eachslice(X, dims = 2), new_ys)` if `X` is a matrix.
 """
 function add_points!(s::AbstractSurrogate,
-    new_xs::AbstractVector{<:AbstractVector},
+    new_xs::AbstractVector,
     new_ys::AbstractVector)
-    add_point!.(s, new_xs, new_ys)
+    add_point!.(Ref(s), new_xs, new_ys)
 end
 
 """
@@ -64,35 +79,21 @@ See also [`update_hyperparameters!`](@ref).
 function hyperparameters end
 
 """
-    posterior(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
-
-Return a joint posterior at points `xs`.
-
-Use `posterior(s, eachslice(X, dims = 2))` if `X` is a matrix.
-"""
-function posterior end
-"""
-    posterior_at_point(s::AbstractSurrogate, x::AbstractVector)
-
-Return posterior at point `x`.
-"""
-posterior_at_point(s::AbstractSurrogate, x::AbstractVector) = posterior(s, [x])
-
-"""
-    mean_at_point(s::AbstractSurrogate, x::AbstractVector)
+    mean_at_point(s::AbstractSurrogate, x)
 
 Return mean at point `x`.
 """
 function mean_at_point end
+
 """
-    mean(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
+    mean(s::AbstractSurrogate, xs::AbstractVector)
 
 Return a vector of means at points `xs`.
 
 Use `mean(s, eachslice(X, dims = 2))` if `X` is a matrix.
 """
-function mean(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
-    mean_at_point.(s, xs)
+function mean(s::AbstractSurrogate, xs::AbstractVector)
+    mean_at_point.(Ref(s), xs)
 end
 
 """
@@ -103,35 +104,46 @@ Return variance at point `x`.
 function var_at_point end
 
 """
-    var(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
+    var(s::AbstractSurrogate, xs::AbstractVector)
 
 Return a vector of variances at points `xs`.
 """
-function var(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
-    var_at_point.(s, xs)
+function var(s::AbstractSurrogate, xs::AbstractVector)
+    var_at_point.(Ref(s), xs)
 end
 
 """
-    rand(s::AbstractSurrogate, xs::AbstractVector{<:AbstractVector})
+mean_and_var_at_point(s::AbstractSurrogate, x)
+
+Return a Tuple of mean and variance at point `x`.
+"""
+function mean_and_var_at_point(s::AbstractSurrogate, x)
+    mean_at_point(s, x), var_at_point(s, x)
+end
+
+"""
+    mean_and_var(s::AbstractSurrogate, xs)
+
+Return a Tuple of vector of means and vector of variances at points `xs`.
+"""
+function mean_and_var(s::AbstractSurrogate, xs::AbstractVector)
+    mean(s, xs), var(s, xs)
+end
+
+"""
+    rand(s::AbstractSurrogate, xs::AbstractVector)
 
 Return a sample from the joint posterior at points `xs`.
 """
 function rand end
 
 """
-    rand_at_point(s::AbstractSurrogate, x::AbstractVector)
+    rand_at_point(s::AbstractSurrogate, x)
 
 Return a sample from the posterior distribution at a point `x`.
 """
-function rand_at_point(s::AbstractSurrogate, x::AbstractVector)
+function rand_at_point(s::AbstractSurrogate, x)
     only(rand(s::AbstractSurrogate, [x]))
 end
-
-"""
-    logpdf(s::AbstractSurrogate)
-
-Return a log marginal posterior predictive probability.
-"""
-function logpdf end
 
 end

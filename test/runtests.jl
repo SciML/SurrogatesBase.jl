@@ -1,7 +1,11 @@
 using SurrogatesBase
-import SurrogatesBase: add_point!,
+import SurrogatesBase: add_point!, add_points!,
     update_hyperparameters!, hyperparameters,
-    mean, mean_at_point
+    mean, mean_at_point,
+    var, var_at_point,
+    mean_and_var, mean_and_var_at_point,
+    rand, rand_at_point
+
 using Test
 using LinearAlgebra
 
@@ -17,7 +21,7 @@ function add_point!(s::DummySurrogate, new_x, new_y)
 end
 
 # dummy mean_at_point
-mean_at_point(s::DummySurrogate, x::AbstractVector) = x
+mean_at_point(s::DummySurrogate, x) = x
 
 mutable struct HyperparameterDummySurrogate{X, Y} <: AbstractSurrogate
     xs::Vector{X}
@@ -65,7 +69,6 @@ end
     @test d([2.0, 2.0]) == 5.0
     @test_throws MethodError hyperparameters(d)
     @test_throws MethodError update_hyperparameters!(d, 5)
-    @test_throws MethodError posterior(d, 5)
 end
 
 @testset "hyperparameter interface" begin
@@ -80,3 +83,5 @@ end
     update_hyperparameters!(hd, (; p = 4))
     @test hyperparameters(hd).p == 3
 end
+
+# TODO: add tests
