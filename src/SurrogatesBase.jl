@@ -20,19 +20,19 @@ Subtypes of `AbstractSurrogate` can be callable with input points `x` such that 
 is an evaluation of the surrogate at `x`, corresponding to an approximation of the underlying
 function at `x`.
 
- # Examples
- ```jldoctest
- julia> struct ZeroSurrogate{D, R} <: AbstractSurrogate{D, R} end
+# Examples
+```jldoctest
+julia> struct ZeroSurrogate{D, R} <: AbstractSurrogate{D, R} end
 
- julia> (::ZeroSurrogate{D})(x::D) where D = 0
+julia> (::ZeroSurrogate{D})(x::D) where D = 0
 
- julia> s = ZeroSurrogate{Int, Int}()
- ZeroSurrogate{Int64, Int64}()
+julia> s = ZeroSurrogate{Int, Int}()
+ZeroSurrogate{Int64, Int64}()
 
- julia> s(4) == 0
- true
- ```
- """
+julia> s(4) == 0
+true
+```
+"""
 abstract type AbstractSurrogate{D, R} <: Function end
 
 """
