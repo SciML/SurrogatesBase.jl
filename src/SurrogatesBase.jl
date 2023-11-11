@@ -13,15 +13,15 @@ export finite_posterior
 
 An abstract type for formalizing deterministic surrogates.
 
-    (s::AbstractSurrogate)(x)
+    (s::AbstractDeterministicSurrogate)(x)
 
-Subtypes of `AbstractSurrogate` are callable with an input point `x`. The result
+Subtypes of `AbstractDeterministicSurrogate` are callable with an input point `x`. The result
 is an evaluation of the surrogate at `x`, corresponding to an approximation of the underlying
 function at `x`.
 
  # Examples
  ```jldoctest
- julia> struct ZeroSurrogate <: AbstractSurrogate end
+ julia> struct ZeroSurrogate <: AbstractDeterministicSurrogate end
 
  julia> (::ZeroSurrogate)(x) = 0
 
