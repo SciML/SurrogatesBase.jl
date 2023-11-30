@@ -59,9 +59,9 @@ The method `add_points!(s, xs, ys)` **must** be implemented, where `xs` is a `Ve
 inputs and `ys` is a `Vector` of corresponding outputs. For single points `x` and `y`, call 
 `add_points!(s, [x], [y])` for adding `x`, `y` into the surrogate `s`.
 
-A stochastic surrogate `s` **must** implement a method `finite_posterior(s, xs)`,  
-where `xs` is a `Vector` of inputs. The returned object provides methods for 
-working with the finite dimensional posterior distribution at points `xs`.
+A stochastic surrogate `s` **must** implement a method `finite_posterior(s, xs)`,  where `xs` is 
+a `Vector` of points. The returned object provides methods for  working with the finite 
+dimensional posterior distribution at points `xs`.
 The following methods might be supported:
 
 - `mean(finite_posterior(s,xs))` returns a `Vector` of posterior means at `xs`
