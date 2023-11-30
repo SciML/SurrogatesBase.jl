@@ -1,6 +1,5 @@
 module SurrogatesBase
 
-export AbstractSurrogate
 export AbstractDeterministicSurrogate
 export AbstractStochasticSurrogate
 
@@ -11,7 +10,7 @@ export finite_posterior
 """
     abstract type AbstractDeterministicSurrogate <: Function end
 
-An abstract type for formalizing deterministic surrogates.
+An abstract type for deterministic surrogates.
 
     (s::AbstractDeterministicSurrogate)(x)
 
@@ -37,19 +36,14 @@ abstract type AbstractDeterministicSurrogate <: Function end
 """
     abstract type AbstractStochasticSurrogate end
 
-An abstract type for formalizing stochastic surrogates.
+An abstract type for stochastic surrogates.
 
 See also [`finite_posterior`](@ref).
 """
 abstract type AbstractStochasticSurrogate end
 
 """
-`AbstractSurrogate` unifies `AbstractDeterministicSurrogate` and `AbstractStochasticSurrogate`types.
-"""
-const AbstractSurrogate = Union{AbstractDeterministicSurrogate, AbstractStochasticSurrogate}
-
-"""
-    add_points!(s::AbstractSurrogate, new_xs::AbstractVector, new_ys::AbstractVector)
+    add_points!(s, new_xs::AbstractVector, new_ys::AbstractVector)
 
 Add evaluations `new_ys` at points `new_xs` to a surrogate `s`.
 
@@ -58,16 +52,16 @@ Use `add_points!(s, eachslice(X, dims = 2), new_ys)` if `X` is a matrix.
 function add_points! end
 
 """
-    update_hyperparameters!(s::AbstractSurrogate, prior)
+    update_hyperparameters!(s, prior)
 
-Use information passed in `prior` to perform an update.
+Use information passed in `prior` to perform a hyperparameter update.
 
 See also [`hyperparameters`](@ref).
 """
 function update_hyperparameters! end
 
 """
-    hyperparameters(s::AbstractSurrogate)
+    hyperparameters(s)
 
 Return a `NamedTuple`, in which names are hyperparameters and values are currently used
 values of hyperparameters in `s`.
