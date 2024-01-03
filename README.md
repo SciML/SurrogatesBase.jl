@@ -16,14 +16,21 @@ approximation.
 
 Deterministic surrogates `s` are subtypes of `SurrogatesBase.AbstractDeterministicSurrogate`, 
 which is a subtype of `Function`.
-The method `add_points!(s, xs, ys)` **must** be implemented and the surrogate **must** be
+The method `include_data!(s, xs, ys)` **must** be implemented and the surrogate **must** be
 [callable](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects)
-`s(xs)`, where `xs` is a `Vector` of inputs and `ys` is a `Vector` of corresponding outputs.
-For single points `x` and `y`, call these methods via `add_points!(s, [x], [y])`
+`s(xs)`, where `xs` is a `Vector` of input points and `ys` is a `Vector` of corresponding evaluations.
+
+Calling `include_data!(s, xs, ys)` refits the surrogate `s` to include evaluations `ys` at points `xs`.
+The result of `s(xs)` is a `Vector` of evaluations of the surrogate at points `xs`, corresponding to approximations of the underlying function at points `xs` respectively.
+
+For single points `x` and `y`, call these methods via `include_data!(s, [x], [y])`
 and `s([x])`.
 
 If the surrogate `s` has tunable hyper-parameters, the methods
-`update_hyperparameters!(s, prior)` and `hyperparameters(s)` have to be implemented.
+`update_hyperparameters!(s, prior)` and `hyperparameters(s)` **must** be implemented.
+
+Calling `update_hyperparameters!(s, prior)` updates the hyperparameters of the surrogate `s` by performing hyperparameter optimization using the information in `prior`. After the hyperparameters of `s` are updated, `s` is fit to past evaluations.
+Calling `hyperparameters(s)` returns a `NamedTuple`, in which names are hyperparameters and values are currently used values of hyperparameters in `s`.
 
 ### Example
 
@@ -39,15 +46,16 @@ end
 (rbf::RBF)(xs) = [rbf.weights' * exp.(-rbf.scale * (x .- rbf.centers).^2)
                   for x in xs]
 
-function SurrogatesBase.add_points!(rbf::RBF, xs, ys)
-    # update rbf.weights
+function SurrogatesBase.include_data!(rbf::RBF, xs, ys)
+    # Refit the surrogate by updating rbf.weights to include new 
+    # evaluations ys at points xs
     return rbf
 end
 
-SurrogatesBase.hyperparameters(rbf::RBF) = (rbf.scale,)
+SurrogatesBase.hyperparameters(rbf::RBF) = (scale = rbf.scale,)
 
 function SurrogatesBase.update_hyperparameters!(rbf::RBF, prior)
-    # change rbf.scale and adapt rbf.weights, if necessary
+    # update rbf.scale and fit the surrogate by adapting rbf.weights
     return rbf
 end
 ```
@@ -55,12 +63,13 @@ end
 ## Stochastic Surrogates
 
 Stochastic surrogates `s` are subtypes of `SurrogatesBase.AbstractStochasticSurrogate`.
-The method `add_points!(s, xs, ys)` **must** be implemented, where `xs` is a `Vector` of
-inputs and `ys` is a `Vector` of corresponding outputs. For single points `x` and `y`, call 
-`add_points!(s, [x], [y])` for adding `x`, `y` into the surrogate `s`.
+The methods `include_data!(s, xs, ys)` and `finite_posterior(s, xs)` **must** be implemented, where `xs` is a `Vector` of input points and `ys` is a `Vector` of corresponding observed samples.
 
-A stochastic surrogate `s` **must** implement a method `finite_posterior(s, xs)`,  where `xs` is 
-a `Vector` of points. The returned object provides methods for  working with the finite 
+Calling `include_data!(s, xs, ys)` refits the surrogate `s` to include observations `ys` at points `xs`.
+
+For single points `x` and `y`, call the `include_data!(s, xs, ys)` via `include_data!(s, [x], [y])`.
+
+Calling `finite_posterior(s, xs)` returns an object that provides methods for  working with the finite 
 dimensional posterior distribution at points `xs`.
 The following methods might be supported:
 
@@ -71,7 +80,10 @@ of posterior means and a `Vector` of posterior variances at `xs`
 - `rand(finite_posterior(s,xs))` returns a `Vector`, which is a sample from the joint posterior at points `xs`
 
 If the surrogate `s` has tunable hyper-parameters, the methods
-`update_hyperparameters!(s, prior)` and `hyperparameters(s)` have to be implemented.
+`update_hyperparameters!(s, prior)` and `hyperparameters(s)` **must** be implemented.
+
+Calling `update_hyperparameters!(s, prior)` updates the hyperparameters of the surrogate `s` by performing hyperparameter optimization using the information in `prior`. After the hyperparameters of `s` are updated, `s` is fit to past samples.
+Calling `hyperparameters(s)` returns a `NamedTuple`, in which names are hyperparameters and values are currently used values of hyperparameters in `s`.
 
 
 ### Example
@@ -86,7 +98,7 @@ mutable struct GaussianProcessSurrogate{D, R, GP, H <: NamedTuple} <: AbstractSt
     hyperparameters::H
 end
 
-function SurrogatesBase.add_points!(g::GaussianProcessSurrogate, new_xs, new_ys)
+function SurrogatesBase.include_data!(g::GaussianProcessSurrogate, new_xs, new_ys)
     append!(g.xs, new_xs)
     append!(g.ys, new_ys)
     # condition the prior `g.gp_process` on new data to obtain a posterior
@@ -103,9 +115,11 @@ end
 SurrogatesBase.hyperparameters(g::GaussianProcessSurrogate) = g.hyperparameters
 
 function SurrogatesBase.update_hyperparameters!(g::GaussianProcessSurrogate, prior)
-    # Use the passed prior on hyperparameters, e.g., some parameter could be uniformly 
-    # distributed between an upper and lower bound, to find better hyperparameters.
-    # Update g.gp_process, g.hyperparameters to the improved hyperparameters.
+    # Use prior on hyperparameters, e.g., parameters uniformly distributed 
+    # between an upper and lower bound, to perform hyperparameter optimization.
+    # Set g.hyperparameters to the improved hyperparameters.
+    # Fit a Gaussian process that uses the updated hyperparameters to past
+    # samples and save it in g.gp_process.
     return g
 end
 ```
