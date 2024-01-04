@@ -3,7 +3,7 @@ module SurrogatesBase
 export AbstractDeterministicSurrogate
 export AbstractStochasticSurrogate
 
-export include_data!
+export update!
 export update_hyperparameters!, hyperparameters
 export finite_posterior
 
@@ -43,7 +43,7 @@ See also [`finite_posterior`](@ref).
 abstract type AbstractStochasticSurrogate end
 
 """
-    include_data!(s, new_xs::AbstractVector, new_ys::AbstractVector)
+    update!(s, new_xs::AbstractVector, new_ys::AbstractVector)
 
 Include data `new_ys` at points `new_xs` into the surrogate `s`, i.e., refit the surrogate `s`
 to incorporate new data points.
@@ -52,9 +52,9 @@ If the surrogate `s` is a deterministic surrogate, the `new_ys` correspond to fu
 evaluations, if `s` is a stochastic surrogate, the `new_ys` are samples from a conditional
 probability distribution.
 
-Use `include_data!(s, eachslice(X, dims = 2), new_ys)` if `X` is a matrix.
+Use `update!(s, eachslice(X, dims = 2), new_ys)` if `X` is a matrix.
 """
-function include_data! end
+function update! end
 
 """
     update_hyperparameters!(s, prior)

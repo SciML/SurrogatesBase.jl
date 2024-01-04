@@ -16,14 +16,14 @@ approximation.
 
 Deterministic surrogates `s` are subtypes of `SurrogatesBase.AbstractDeterministicSurrogate`, 
 which is a subtype of `Function`.
-The method `include_data!(s, xs, ys)` **must** be implemented and the surrogate **must** be
+The method `update!(s, xs, ys)` **must** be implemented and the surrogate **must** be
 [callable](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects)
 `s(xs)`, where `xs` is a `Vector` of input points and `ys` is a `Vector` of corresponding evaluations.
 
-Calling `include_data!(s, xs, ys)` refits the surrogate `s` to include evaluations `ys` at points `xs`.
+Calling `update!(s, xs, ys)` refits the surrogate `s` to include evaluations `ys` at points `xs`.
 The result of `s(xs)` is a `Vector` of evaluations of the surrogate at points `xs`, corresponding to approximations of the underlying function at points `xs` respectively.
 
-For single points `x` and `y`, call these methods via `include_data!(s, [x], [y])`
+For single points `x` and `y`, call these methods via `update!(s, [x], [y])`
 and `s([x])`.
 
 If the surrogate `s` has tunable hyper-parameters, the methods
@@ -46,7 +46,7 @@ end
 (rbf::RBF)(xs) = [rbf.weights' * exp.(-rbf.scale * (x .- rbf.centers).^2)
                   for x in xs]
 
-function SurrogatesBase.include_data!(rbf::RBF, xs, ys)
+function SurrogatesBase.update!(rbf::RBF, xs, ys)
     # Refit the surrogate by updating rbf.weights to include new 
     # evaluations ys at points xs
     return rbf
@@ -63,11 +63,11 @@ end
 ## Stochastic Surrogates
 
 Stochastic surrogates `s` are subtypes of `SurrogatesBase.AbstractStochasticSurrogate`.
-The methods `include_data!(s, xs, ys)` and `finite_posterior(s, xs)` **must** be implemented, where `xs` is a `Vector` of input points and `ys` is a `Vector` of corresponding observed samples.
+The methods `update!(s, xs, ys)` and `finite_posterior(s, xs)` **must** be implemented, where `xs` is a `Vector` of input points and `ys` is a `Vector` of corresponding observed samples.
 
-Calling `include_data!(s, xs, ys)` refits the surrogate `s` to include observations `ys` at points `xs`.
+Calling `update!(s, xs, ys)` refits the surrogate `s` to include observations `ys` at points `xs`.
 
-For single points `x` and `y`, call the `include_data!(s, xs, ys)` via `include_data!(s, [x], [y])`.
+For single points `x` and `y`, call the `update!(s, xs, ys)` via `update!(s, [x], [y])`.
 
 Calling `finite_posterior(s, xs)` returns an object that provides methods for  working with the finite 
 dimensional posterior distribution at points `xs`.
@@ -98,7 +98,7 @@ mutable struct GaussianProcessSurrogate{D, R, GP, H <: NamedTuple} <: AbstractSt
     hyperparameters::H
 end
 
-function SurrogatesBase.include_data!(g::GaussianProcessSurrogate, new_xs, new_ys)
+function SurrogatesBase.update!(g::GaussianProcessSurrogate, new_xs, new_ys)
     append!(g.xs, new_xs)
     append!(g.ys, new_ys)
     # condition the prior `g.gp_process` on new data to obtain a posterior
