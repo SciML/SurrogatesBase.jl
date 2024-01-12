@@ -30,7 +30,7 @@ If the surrogate `s` has tunable hyper-parameters, the methods
 `update_hyperparameters!(s, prior)` and `hyperparameters(s)` **must** be implemented.
 
 Calling `update_hyperparameters!(s, prior)` updates the hyperparameters of the surrogate `s` by performing hyperparameter optimization using the information in `prior`. After the hyperparameters of `s` are updated, `s` is fit to past evaluations.
-Calling `hyperparameters(s)` returns a `NamedTuple`, in which names are hyperparameters and values are currently used values of hyperparameters in `s`.
+Calling `hyperparameters(s)` returns current values of hyperparameters.
 
 ### Example
 
@@ -52,7 +52,7 @@ function SurrogatesBase.update!(rbf::RBF, xs, ys)
     return rbf
 end
 
-SurrogatesBase.hyperparameters(rbf::RBF) = (scale = rbf.scale,)
+SurrogatesBase.hyperparameters(rbf::RBF) = rbf.scale
 
 function SurrogatesBase.update_hyperparameters!(rbf::RBF, prior)
     # update rbf.scale and fit the surrogate by adapting rbf.weights
@@ -83,7 +83,7 @@ If the surrogate `s` has tunable hyper-parameters, the methods
 `update_hyperparameters!(s, prior)` and `hyperparameters(s)` **must** be implemented.
 
 Calling `update_hyperparameters!(s, prior)` updates the hyperparameters of the surrogate `s` by performing hyperparameter optimization using the information in `prior`. After the hyperparameters of `s` are updated, `s` is fit to past samples.
-Calling `hyperparameters(s)` returns a `NamedTuple`, in which names are hyperparameters and values are currently used values of hyperparameters in `s`.
+Calling `hyperparameters(s)` returns current values of hyperparameters.
 
 
 ### Example

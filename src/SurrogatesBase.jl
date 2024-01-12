@@ -70,8 +70,7 @@ function update_hyperparameters! end
 """
     hyperparameters(s)
 
-Return a `NamedTuple`, in which names are hyperparameters and values are currently used
-values of hyperparameters in `s`.
+Returns current values of hyperparameters.
 
 See also [`update_hyperparameters!`](@ref).
 """
