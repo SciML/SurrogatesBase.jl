@@ -3,7 +3,7 @@ module SurrogatesBase
 export AbstractDeterministicSurrogate
 export AbstractStochasticSurrogate
 
-export update!
+export update!, parameters
 export update_hyperparameters!, hyperparameters
 export finite_posterior
 
@@ -55,6 +55,13 @@ probability distribution.
 Use `update!(s, eachslice(X, dims = 2), new_ys)` if `X` is a matrix.
 """
 function update! end
+
+"""
+    parameters(s)
+
+Returns current values of parameters used in surrogate `s`.
+"""
+function parameters end
 
 """
     update_hyperparameters!(s, prior)

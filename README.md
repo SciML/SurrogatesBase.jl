@@ -16,6 +16,9 @@ approximation.
 
 Deterministic surrogates `s` are subtypes of `SurrogatesBase.AbstractDeterministicSurrogate`, 
 which is a subtype of `Function`.
+
+### Required methods
+
 The method `update!(s, xs, ys)` **must** be implemented and the surrogate **must** be
 [callable](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects)
 `s(xs)`, where `xs` is a `Vector` of input points and `ys` is a `Vector` of corresponding evaluations.
@@ -26,7 +29,11 @@ The result of `s(xs)` is a `Vector` of evaluations of the surrogate at points `x
 For single points `x` and `y`, call these methods via `update!(s, [x], [y])`
 and `s([x])`.
 
-If the surrogate `s` has tunable hyper-parameters, the methods
+### Optional methods
+
+If the surrogate `s` wants to expose current parameter values, the method `parameters(s)` **must** be implemented.
+
+If the surrogate `s` has tunable hyperparameters, the methods
 `update_hyperparameters!(s, prior)` and `hyperparameters(s)` **must** be implemented.
 
 Calling `update_hyperparameters!(s, prior)` updates the hyperparameters of the surrogate `s` by performing hyperparameter optimization using the information in `prior`. After the hyperparameters of `s` are updated, `s` is fit to past evaluations.
@@ -52,6 +59,8 @@ function SurrogatesBase.update!(rbf::RBF, xs, ys)
     return rbf
 end
 
+SurrogatesBase.parameters(rbf::RBF) = rbf.centers, rbf.weights
+
 SurrogatesBase.hyperparameters(rbf::RBF) = rbf.scale
 
 function SurrogatesBase.update_hyperparameters!(rbf::RBF, prior)
@@ -63,6 +72,9 @@ end
 ## Stochastic Surrogates
 
 Stochastic surrogates `s` are subtypes of `SurrogatesBase.AbstractStochasticSurrogate`.
+
+### Required methods
+
 The methods `update!(s, xs, ys)` and `finite_posterior(s, xs)` **must** be implemented, where `xs` is a `Vector` of input points and `ys` is a `Vector` of corresponding observed samples.
 
 Calling `update!(s, xs, ys)` refits the surrogate `s` to include observations `ys` at points `xs`.
@@ -78,6 +90,10 @@ The following methods might be supported:
 - `mean_and_var(finite_posterior(s,xs))` returns a `Tuple` consisting of a `Vector`
 of posterior means and a `Vector` of posterior variances at `xs`
 - `rand(finite_posterior(s,xs))` returns a `Vector`, which is a sample from the joint posterior at points `xs`
+
+### Optional methods
+
+If the surrogate `s` wants to expose current parameter values, the method `parameters(s)` **must** be implemented.
 
 If the surrogate `s` has tunable hyper-parameters, the methods
 `update_hyperparameters!(s, prior)` and `hyperparameters(s)` **must** be implemented.
