@@ -1,7 +1,7 @@
 name = "SurrogatesBase"
 uuid = "89f642e6-4179-4274-8202-c11f4bd9a72c"
 authors = ["Samuel Belko <samuelbelko@protonmail.com> and contributors"]
-version = "1.0.0"
+version = "1.1.0"
 
 [compat]
 julia = "1.10"
