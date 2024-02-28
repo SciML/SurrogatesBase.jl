@@ -18,18 +18,18 @@ Subtypes of `AbstractDeterministicSurrogate` are callable with a `Vector` of poi
 The result is a `Vector` of evaluations of the surrogate at points `xs`, corresponding to
 approximations of the underlying function at points `xs` respectively.
 
- # Examples
- ```jldoctest
- julia> struct ZeroSurrogate <: AbstractDeterministicSurrogate end
+# Examples
 
- julia> (::ZeroSurrogate)(xs) = 0
+```jldoctest
+julia> struct ZeroSurrogate <: AbstractDeterministicSurrogate end
 
- julia> s = ZeroSurrogate()
- ZeroSurrogate()
+julia> (::ZeroSurrogate)(xs) = 0
 
- julia> s([4]) == 0
- true
- ```
+julia> s = ZeroSurrogate();
+
+julia> s([4]) == 0
+true
+```
 """
 abstract type AbstractDeterministicSurrogate <: Function end
 
@@ -93,8 +93,7 @@ the returned object:
 
 - `mean(finite_posterior(s,xs))` returns a `Vector` of posterior means at `xs`
 - `var(finite_posterior(s,xs))` returns a `Vector` of posterior variances at `xs`
-- `mean_and_var(finite_posterior(s,xs))` returns a `Tuple` consisting of a `Vector`
-of posterior means and a `Vector` of posterior variances at `xs`
+- `mean_and_var(finite_posterior(s,xs))` returns a `Tuple` consisting of a `Vector` of posterior means and a `Vector` of posterior variances at `xs`
 - `rand(finite_posterior(s,xs))` returns a `Vector`, which is a sample from the joint
 posterior at points `xs`
 
