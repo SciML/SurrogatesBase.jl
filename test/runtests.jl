@@ -1,6 +1,9 @@
 using SurrogatesBase
 
 using Test
+using SafeTestsets
+@safetestset "Quality Assurance" include("qa.jl")
+
 using LinearAlgebra
 import Statistics
 
