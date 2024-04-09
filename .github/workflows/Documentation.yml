@@ -8,7 +8,7 @@ on:
     tags: '*'
   pull_request:
   schedule:
-    - cron: '34 21 * * 4'
+    - cron: '59 12 * * 2'
 jobs:
   build:
     runs-on: ubuntu-latest
