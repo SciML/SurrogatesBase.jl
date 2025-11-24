@@ -2,5 +2,8 @@
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 SurrogatesBase = "89f642e6-4179-4274-8202-c11f4bd9a72c"
 
+[sources]
+SurrogatesBase = {path = "/home/runner/work/SurrogatesBase.jl/SurrogatesBase.jl"}
+
 [compat]
 Documenter = "1"
