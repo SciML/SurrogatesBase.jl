@@ -7,3 +7,4 @@ SurrogatesBase = {path = "/home/runner/work/SurrogatesBase.jl/SurrogatesBase.jl"
 
 [compat]
 Documenter = "1"
+SurrogatesBase = "1.1.0"
