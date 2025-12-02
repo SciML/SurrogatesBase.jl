@@ -278,7 +278,7 @@ uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 version = "1.11.0"
 
 [[deps.SurrogatesBase]]
-path = "/home/chrisrackauckas/github-runners/deepsea4-12/_work/SurrogatesBase.jl/SurrogatesBase.jl"
+path = "/home/runner/work/SurrogatesBase.jl/SurrogatesBase.jl"
 uuid = "89f642e6-4179-4274-8202-c11f4bd9a72c"
 version = "1.1.0"
 
