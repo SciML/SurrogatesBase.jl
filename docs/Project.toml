@@ -4,3 +4,4 @@ SurrogatesBase = "89f642e6-4179-4274-8202-c11f4bd9a72c"
 
 [compat]
 Documenter = "1"
+SurrogatesBase = "1.1.0"
