@@ -82,9 +82,9 @@ version = "3.7.0+0"
 
 [[deps.Git_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "LibCURL_jll", "Libdl", "Libiconv_jll", "OpenSSL_jll", "PCRE2_jll", "Zlib_jll"]
-git-tree-sha1 = "b6a684587ebe896d9f68ae777f648205940f0f70"
+git-tree-sha1 = "46bd50c245fe49ed87377c014a928a549b9ef7ed"
 uuid = "f8c6e375-362e-5223-8a59-34ff63f689eb"
-version = "2.51.3+0"
+version = "2.52.0+0"
 
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]
@@ -278,7 +278,7 @@ uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
 version = "1.11.0"
 
 [[deps.SurrogatesBase]]
-path = "/home/runner/work/SurrogatesBase.jl/SurrogatesBase.jl"
+path = "/home/chrisrackauckas/github-runners/deepsea4-12/_work/SurrogatesBase.jl/SurrogatesBase.jl"
 uuid = "89f642e6-4179-4274-8202-c11f4bd9a72c"
 version = "1.1.0"
 
