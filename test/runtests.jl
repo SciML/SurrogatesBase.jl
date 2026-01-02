@@ -3,6 +3,7 @@ using SurrogatesBase
 using Test
 using SafeTestsets
 @safetestset "Quality Assurance" include("qa.jl")
+@safetestset "JET Static Analysis" include("jet.jl")
 
 using LinearAlgebra
 import Statistics
