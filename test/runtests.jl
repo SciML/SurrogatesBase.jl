@@ -15,7 +15,7 @@ end
 (s::DummySurrogate)(x) = s.ys[argmin(norm(x - ξ) for ξ in s.xs)]
 function SurrogatesBase.update!(s::DummySurrogate, new_xs, new_ys)
     append!(s.xs, new_xs)
-    append!(s.ys, new_ys)
+    return append!(s.ys, new_ys)
 end
 
 mutable struct HyperparameterDummySurrogate{X, Y} <: AbstractDeterministicSurrogate
@@ -27,14 +27,14 @@ end
 (s::HyperparameterDummySurrogate)(x) = s.ys[argmin(norm(x - ξ, s.θ.p) for ξ in s.xs)]
 function SurrogatesBase.update!(s::HyperparameterDummySurrogate, new_xs, new_ys)
     append!(s.xs, new_xs)
-    append!(s.ys, new_ys)
+    return append!(s.ys, new_ys)
 end
 
 SurrogatesBase.hyperparameters(s::HyperparameterDummySurrogate) = s.θ
 
 function SurrogatesBase.update_hyperparameters!(s::HyperparameterDummySurrogate, prior)
     # "hyperparmeter optimization"
-    s.θ = (; p = (s.θ.p + prior.p) / 2)
+    return s.θ = (; p = (s.θ.p + prior.p) / 2)
 end
 
 @testset "update!" begin
@@ -59,9 +59,11 @@ end
 
 @testset "hyperparameter interface" begin
     # use HyperparameterDummySurrogate
-    hd = HyperparameterDummySurrogate(Vector{Vector{Float64}}(),
+    hd = HyperparameterDummySurrogate(
+        Vector{Vector{Float64}}(),
         Vector{Float64}(),
-        (; p = 2))
+        (; p = 2)
+    )
     update!(hd, [[1.9, 2.1], [10.3, 0.1]], [5.0, 9.0])
 
     @test hyperparameters(hd).p == 2
@@ -78,7 +80,7 @@ function SurrogatesBase.update!(s::DummyStochasticSurrogate, new_xs, new_ys)
     append!(s.xs, new_xs)
     append!(s.ys, new_ys)
     # update mean
-    s.ys_mean = (s.ys_mean * (length(s.xs) - length(new_xs)) + sum(new_ys)) / length(s.xs)
+    return s.ys_mean = (s.ys_mean * (length(s.xs) - length(new_xs)) + sum(new_ys)) / length(s.xs)
 end
 
 SurrogatesBase.parameters(s::DummyStochasticSurrogate) = s.ys_mean
@@ -94,13 +96,15 @@ function FiniteDummyStochasticSurrogate(s, xs)
 end
 
 function SurrogatesBase.finite_posterior(s::DummyStochasticSurrogate, xs)
-    FiniteDummyStochasticSurrogate(s, xs)
+    return FiniteDummyStochasticSurrogate(s, xs)
 end
 
 @testset "finite_posterior, parameters" begin
     # use HyperparameterDummySurrogate
-    ss = DummyStochasticSurrogate(Vector{Vector{Float64}}(),
-        Vector{Float64}(), 0.0)
+    ss = DummyStochasticSurrogate(
+        Vector{Vector{Float64}}(),
+        Vector{Float64}(), 0.0
+    )
 
     update!(ss, [[1.9, 2.1], [10.3, 0.1]], [5.0, 9.0])
     # test parameters
