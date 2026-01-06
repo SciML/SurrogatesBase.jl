@@ -3,9 +3,19 @@ using JET
 using LinearAlgebra
 import Statistics
 
+# On Julia 1.12+, LinearAlgebra.norm_recursive_check has a type inference issue
+# that causes JET false positives. We ignore LinearAlgebra and Base modules
+# to filter these stdlib issues while still checking our own code.
+const JET_CONFIG = (
+    ignored_modules = (
+        JET.AnyFrameModule(LinearAlgebra),
+        JET.AnyFrameModule(Base),
+    ),
+)
+
 @testset "JET static analysis" begin
     @testset "Package analysis" begin
-        result = JET.report_package("SurrogatesBase")
+        result = JET.report_package(SurrogatesBase; JET_CONFIG...)
         @test length(JET.get_reports(result)) == 0
     end
 
@@ -15,7 +25,7 @@ import Statistics
             xs::Vector{X}
             ys::Vector{Y}
         end
-        (s::JETDummySurrogate)(x) = s.ys[argmin(norm(x - ξ) for ξ in s.xs)]
+        (s::JETDummySurrogate)(x) = s.ys[argmin([norm(x - ξ) for ξ in s.xs])]
         function SurrogatesBase.update!(s::JETDummySurrogate, new_xs, new_ys)
             append!(s.xs, new_xs)
             append!(s.ys, new_ys)
@@ -25,14 +35,17 @@ import Statistics
         SurrogatesBase.update!(d, [[10.3, 0.1], [1.9, 2.1]], [5, 6])
 
         # Test call method
-        result = JET.report_call(d, Tuple{Vector{Float64}})
+        result = JET.report_call(d, Tuple{Vector{Float64}}; JET_CONFIG...)
         @test length(JET.get_reports(result)) == 0
 
         # Test update! method
         result = JET.report_call(
             SurrogatesBase.update!,
-            Tuple{JETDummySurrogate{Vector{Float64}, Int}, Vector{Vector{Float64}},
-                Vector{Int}})
+            Tuple{
+                JETDummySurrogate{Vector{Float64}, Int}, Vector{Vector{Float64}},
+                Vector{Int},
+            }; JET_CONFIG...
+        )
         @test length(JET.get_reports(result)) == 0
     end
 
@@ -46,7 +59,7 @@ import Statistics
             append!(s.xs, new_xs)
             append!(s.ys, new_ys)
             s.ys_mean = (s.ys_mean * (length(s.xs) - length(new_xs)) + sum(new_ys)) /
-                        length(s.xs)
+                length(s.xs)
         end
         SurrogatesBase.parameters(s::JETDummyStochasticSurrogate) = s.ys_mean
 
@@ -64,15 +77,21 @@ import Statistics
         # Test update! method
         result = JET.report_call(
             SurrogatesBase.update!,
-            Tuple{JETDummyStochasticSurrogate{Vector{Float64}, Float64},
-                Vector{Vector{Float64}}, Vector{Float64}})
+            Tuple{
+                JETDummyStochasticSurrogate{Vector{Float64}, Float64},
+                Vector{Vector{Float64}}, Vector{Float64},
+            }; JET_CONFIG...
+        )
         @test length(JET.get_reports(result)) == 0
 
         # Test finite_posterior
         result = JET.report_call(
             SurrogatesBase.finite_posterior,
-            Tuple{JETDummyStochasticSurrogate{Vector{Float64}, Float64},
-                Vector{Vector{Float64}}})
+            Tuple{
+                JETDummyStochasticSurrogate{Vector{Float64}, Float64},
+                Vector{Vector{Float64}},
+            }; JET_CONFIG...
+        )
         @test length(JET.get_reports(result)) == 0
     end
 end
