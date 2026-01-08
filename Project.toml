@@ -4,6 +4,7 @@ authors = ["Samuel Belko <samuelbelko@protonmail.com> and contributors"]
 version = "1.1.0"
 
 [compat]
+AllocCheck = "0.2"
 Aqua = "0.8"
 JET = "0.9, 0.10, 0.11"
 LinearAlgebra = "1.10"
@@ -13,6 +14,7 @@ Test = "1.10"
 julia = "1.10"
 
 [extras]
+AllocCheck = "9b6a8646-10ed-4001-bbdc-1d2f46dfbb1a"
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -21,4 +23,4 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "JET", "LinearAlgebra", "SafeTestsets", "Statistics", "Test"]
+test = ["AllocCheck", "Aqua", "JET", "LinearAlgebra", "SafeTestsets", "Statistics", "Test"]

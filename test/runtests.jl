@@ -117,3 +117,8 @@ end
     @test length(m) == 3
     @test m[1] ≈ parameters(ss)
 end
+
+# Run allocation tests in nopre group to avoid precompilation interference
+if get(ENV, "GROUP", "all") == "all" || get(ENV, "GROUP", "all") == "nopre"
+    @safetestset "Allocation Tests" include("alloc_tests.jl")
+end
