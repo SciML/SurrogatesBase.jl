@@ -32,39 +32,45 @@ function (s::AllocTestSurrogate)(x::Vector{Float64})
     return @inbounds s.ys[min_idx]
 end
 
-@testset "AllocCheck - Surrogate Operations" begin
-    # Create surrogate with test data
-    xs = [Float64[1.0, 2.0], Float64[3.0, 4.0], Float64[5.0, 6.0]]
-    ys = [1, 2, 3]
-    s = AllocTestSurrogate(xs, ys)
+# AllocCheck builds on GPUCompiler/LLVM compiler internals, which are unstable on
+# Julia prereleases (the RC codegen reports a spurious allocation that does not appear
+# on released Julia). Only run these checks on released Julia, matching the original
+# GROUP=nopre scoping of this file.
+if isempty(VERSION.prerelease)
+    @testset "AllocCheck - Surrogate Operations" begin
+        # Create surrogate with test data
+        xs = [Float64[1.0, 2.0], Float64[3.0, 4.0], Float64[5.0, 6.0]]
+        ys = [1, 2, 3]
+        s = AllocTestSurrogate(xs, ys)
 
-    # Test that calling the surrogate is allocation-free
-    x_test = Float64[2.0, 3.0]
+        # Test that calling the surrogate is allocation-free
+        x_test = Float64[2.0, 3.0]
 
-    # Verify correctness first
-    @test s(x_test) == 1  # Closest to [1.0, 2.0]
+        # Verify correctness first
+        @test s(x_test) == 1  # Closest to [1.0, 2.0]
 
-    # Check that the call is allocation-free after warmup
-    s(x_test)  # warmup
-    allocs = @allocated s(x_test)
-    @test allocs == 0
+        # Check that the call is allocation-free after warmup
+        s(x_test)  # warmup
+        allocs = @allocated s(x_test)
+        @test allocs == 0
 
-    # Test with @check_allocs macro
-    @check_allocs function test_surrogate_call(surr::AllocTestSurrogate{Vector{Float64}, Int}, x::Vector{Float64})
-        return surr(x)
-    end
-    @test test_surrogate_call(s, x_test) == 1
-end
-
-@testset "AllocCheck - Type Stability" begin
-    # Verify that abstract type checks are allocation-free
-    xs = [Float64[1.0, 2.0]]
-    ys = [1]
-    s = AllocTestSurrogate(xs, ys)
-
-    @check_allocs function check_type(surr::AllocTestSurrogate)
-        return surr isa AbstractDeterministicSurrogate
+        # Test with @check_allocs macro
+        @check_allocs function test_surrogate_call(surr::AllocTestSurrogate{Vector{Float64}, Int}, x::Vector{Float64})
+            return surr(x)
+        end
+        @test test_surrogate_call(s, x_test) == 1
     end
 
-    @test check_type(s) == true
+    @testset "AllocCheck - Type Stability" begin
+        # Verify that abstract type checks are allocation-free
+        xs = [Float64[1.0, 2.0]]
+        ys = [1]
+        s = AllocTestSurrogate(xs, ys)
+
+        @check_allocs function check_type(surr::AllocTestSurrogate)
+            return surr isa AbstractDeterministicSurrogate
+        end
+
+        @test check_type(s) == true
+    end
 end
