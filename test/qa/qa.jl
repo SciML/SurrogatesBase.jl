@@ -1,24 +1,20 @@
+using SciMLTesting
 using SurrogatesBase
-using Aqua
 using JET
 using LinearAlgebra
 using Test
 import Statistics
 
-@testset "Aqua" begin
-    Aqua.find_persistent_tasks_deps(SurrogatesBase)
-    Aqua.test_ambiguities(SurrogatesBase, recursive = false)
-    Aqua.test_deps_compat(SurrogatesBase)
-    Aqua.test_piracies(SurrogatesBase)
-    Aqua.test_project_extras(SurrogatesBase)
-    Aqua.test_stale_deps(SurrogatesBase)
-    Aqua.test_unbound_args(SurrogatesBase)
-    Aqua.test_undefined_exports(SurrogatesBase)
-end
+run_qa(SurrogatesBase; explicit_imports = true)
 
+# JET.report_call type-stability analysis of concrete user-defined surrogates.
+# This goes beyond run_qa's package-level JET.test_package: it checks that the
+# interface contract (update!/finite_posterior/parameters and the call method)
+# stays inferable for downstream subtypes.
+#
 # On Julia 1.12+, LinearAlgebra.norm_recursive_check has a type inference issue
-# that causes JET false positives. We ignore LinearAlgebra and Base modules
-# to filter these stdlib issues while still checking our own code.
+# that surfaces as JET false positives through `norm`. We ignore LinearAlgebra
+# and Base frames to filter those stdlib issues while still checking our own code.
 const JET_CONFIG = (
     ignored_modules = (
         JET.AnyFrameModule(LinearAlgebra),
@@ -26,14 +22,8 @@ const JET_CONFIG = (
     ),
 )
 
-@testset "JET static analysis" begin
-    @testset "Package analysis" begin
-        result = JET.report_package(SurrogatesBase; JET_CONFIG...)
-        @test length(JET.get_reports(result)) == 0
-    end
-
+@testset "JET report_call type stability" begin
     @testset "DummySurrogate type stability" begin
-        # Test implementation from runtests.jl
         struct JETDummySurrogate{X, Y} <: AbstractDeterministicSurrogate
             xs::Vector{X}
             ys::Vector{Y}
@@ -47,11 +37,9 @@ const JET_CONFIG = (
         d = JETDummySurrogate(Vector{Vector{Float64}}(), Vector{Int}())
         SurrogatesBase.update!(d, [[10.3, 0.1], [1.9, 2.1]], [5, 6])
 
-        # Test call method
         result = JET.report_call(d, Tuple{Vector{Float64}}; JET_CONFIG...)
         @test length(JET.get_reports(result)) == 0
 
-        # Test update! method
         result = JET.report_call(
             SurrogatesBase.update!,
             Tuple{
@@ -87,7 +75,6 @@ const JET_CONFIG = (
             JETFiniteDummyStochasticSurrogate(s, xs)
         end
 
-        # Test update! method
         result = JET.report_call(
             SurrogatesBase.update!,
             Tuple{
@@ -97,7 +84,6 @@ const JET_CONFIG = (
         )
         @test length(JET.get_reports(result)) == 0
 
-        # Test finite_posterior
         result = JET.report_call(
             SurrogatesBase.finite_posterior,
             Tuple{
