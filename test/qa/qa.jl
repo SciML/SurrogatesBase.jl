@@ -7,6 +7,45 @@ import Statistics
 
 run_qa(SurrogatesBase; explicit_imports = true)
 
+function documented_api_names()
+    api_path = joinpath(@__DIR__, "..", "..", "docs", "src", "api.md")
+    prefix = string(nameof(SurrogatesBase), ".")
+    documented_names = Symbol[]
+
+    for line in eachline(api_path)
+        stripped = strip(line)
+        startswith(stripped, prefix) || continue
+        push!(documented_names, Symbol(stripped[(lastindex(prefix) + 1):end]))
+    end
+
+    return sort!(unique(documented_names))
+end
+
+function has_source_docstring(mod::Module, name::Symbol)
+    doc = Docs.doc(getfield(mod, name))
+    doc === nothing && return false
+
+    return !occursin("No documentation found", sprint(show, MIME("text/plain"), doc))
+end
+
+@testset "public API documentation coverage" begin
+    public_names = sort!(
+        setdiff(
+            names(SurrogatesBase; all = false, imported = false),
+            [nameof(SurrogatesBase)]
+        )
+    )
+
+    missing_docstrings = [
+        name for name in public_names
+            if !has_source_docstring(SurrogatesBase, name)
+    ]
+    missing_docs_entries = setdiff(public_names, documented_api_names())
+
+    @test missing_docstrings == Symbol[]
+    @test missing_docs_entries == Symbol[]
+end
+
 # JET.report_call type-stability analysis of concrete user-defined surrogates.
 # This goes beyond run_qa's package-level JET.test_package: it checks that the
 # interface contract (update!/finite_posterior/parameters and the call method)
