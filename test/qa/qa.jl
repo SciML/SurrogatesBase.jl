@@ -5,7 +5,7 @@ using LinearAlgebra
 using Test
 import Statistics
 
-run_qa(SurrogatesBase; explicit_imports = true, api_docs_kwargs = (; rendered = true))
+run_qa(SurrogatesBase)
 
 # JET.report_call type-stability analysis of concrete user-defined surrogates.
 # This goes beyond run_qa's package-level JET.test_package: it checks that the
