@@ -1,48 +1,71 @@
+"""
+    SurrogatesBase
+
+Common public interfaces for deterministic and stochastic surrogate implementations.
+
+See [`AbstractDeterministicSurrogate`](@ref), [`AbstractStochasticSurrogate`](@ref), and the
+developer interface guide for extension rules.
+"""
 module SurrogatesBase
 
 export AbstractDeterministicSurrogate
 export AbstractStochasticSurrogate
-
 export update!, parameters
 export update_hyperparameters!, hyperparameters
 export finite_posterior
 
 """
     abstract type AbstractDeterministicSurrogate <: Function end
-    (s::AbstractDeterministicSurrogate)(xs)
 
-Interface tag for deterministic surrogate models.
+Abstract interface for a fitted deterministic surrogate.
 
-Subtypes approximate a deterministic function, or a deterministic statistic of a
-conditional distribution, from observed data. A deterministic surrogate is callable on a
-collection of input points `xs` and should return one surrogate value for each point.
+`AbstractDeterministicSurrogate` has no fields. Concrete subtypes own their training data,
+fitted state, and domain representation. A subtype is a function and represents a deterministic
+approximation such as a regression model or an interpolant.
 
-# Required Methods
+# Interface
 
-  - `(s)(xs)`: evaluate the surrogate at the points in `xs`.
-  - [`update!(s, new_xs, new_ys)`](@ref): incorporate new observations.
+To extend this interface, define a concrete subtype and implement the following methods for that
+subtype:
+
+  - `(surrogate)(x)`: evaluate the fitted approximation at an input `x` supported by the
+    implementation.
+  - [`update!(surrogate, new_x, new_y)`](@ref): incorporate paired observations.
+
+The base interface does not prescribe whether `x` is scalar, a point container, or a batch of
+points. A consuming package may require one of those forms, so implementations must document the
+input forms they support. When an implementation supports batched evaluation, its result must
+preserve the correspondence between requested inputs and returned predictions.
+
+`update!` is an in-place interface: it must leave `surrogate` representing the updated fit. Its
+return value is intentionally unspecified, because existing implementations return `nothing`, the
+surrogate, or an implementation-specific value. Generic callers must use the mutated surrogate and
+must not depend on the return value.
 
 # Optional Methods
 
-  - [`parameters(s)`](@ref): return learned parameter values.
-  - [`hyperparameters(s)`](@ref): return tunable hyperparameter values.
-  - [`update_hyperparameters!(s, prior)`](@ref): update tunable hyperparameters.
+  - [`parameters(surrogate)`](@ref): expose learned parameters or fitted state.
+  - [`hyperparameters(surrogate)`](@ref): expose tunable fitting configuration.
+  - [`update_hyperparameters!(surrogate, prior)`](@ref): update that configuration in place.
 
 # Examples
 
 ```jldoctest
-julia> struct ConstantSurrogate{T} <: AbstractDeterministicSurrogate
+julia> mutable struct ConstantSurrogate{T} <: AbstractDeterministicSurrogate
            value::T
        end
 
-julia> (s::ConstantSurrogate)(xs) = fill(s.value, length(xs));
+julia> (surrogate::ConstantSurrogate)(x) = surrogate.value;
+
+julia> function SurrogatesBase.update!(surrogate::ConstantSurrogate, new_x, new_y)
+           surrogate.value = last(new_y)
+           return nothing
+       end;
 
 julia> surrogate = ConstantSurrogate(1.5);
 
-julia> surrogate([[0.0, 1.0], [1.0, 2.0]])
-2-element Vector{Float64}:
- 1.5
- 1.5
+julia> update!(surrogate, [0.0, 1.0], [2.0, 3.0]); surrogate(0.25)
+3.0
 ```
 """
 abstract type AbstractDeterministicSurrogate <: Function end
@@ -50,185 +73,209 @@ abstract type AbstractDeterministicSurrogate <: Function end
 """
     abstract type AbstractStochasticSurrogate end
 
-Interface tag for stochastic surrogate models.
+Abstract interface for an uncertainty-aware surrogate.
 
-Subtypes approximate a conditional distribution, stochastic process, or uncertainty-aware
-surrogate from observed data.
+`AbstractStochasticSurrogate` has no fields. Concrete subtypes own their observations, fitted
+state, and posterior representation. A subtype represents a conditional distribution or stochastic
+process approximation rather than a deterministic callable approximation.
 
-# Required Methods
+# Interface
 
-  - [`update!(s, new_xs, new_ys)`](@ref): incorporate new observations.
-  - [`finite_posterior(s, xs)`](@ref): return a finite-dimensional posterior object at
-    the points in `xs`.
+To extend this interface, define a concrete subtype and implement the following methods for that
+subtype:
+
+  - [`update!(surrogate, new_x, new_y)`](@ref): incorporate paired observations in place.
+  - [`finite_posterior(surrogate, xs)`](@ref): construct a posterior object for query inputs `xs`.
+
+`xs` is normally a collection of query inputs, but its precise representation is owned by the
+concrete surrogate. The returned posterior object is also implementation-defined. It should expose
+the statistical operations promised by the concrete implementation, such as `Statistics.mean`,
+`Statistics.var`, or `rand`. Its values must correspond to the supplied query inputs.
+
+As for [`AbstractDeterministicSurrogate`](@ref), the `update!` return value is unspecified. Generic
+callers must use the mutated surrogate rather than its return value.
 
 # Optional Methods
 
-  - [`parameters(s)`](@ref): return learned parameter values.
-  - [`hyperparameters(s)`](@ref): return tunable hyperparameter values.
-  - [`update_hyperparameters!(s, prior)`](@ref): update tunable hyperparameters.
-
-See also [`finite_posterior`](@ref).
+  - [`parameters(surrogate)`](@ref): expose learned parameters or fitted state.
+  - [`hyperparameters(surrogate)`](@ref): expose tunable fitting configuration.
+  - [`update_hyperparameters!(surrogate, prior)`](@ref): update that configuration in place.
 """
 abstract type AbstractStochasticSurrogate end
 
 """
-    update!(s, new_xs::AbstractVector, new_ys::AbstractVector)
+    update!(surrogate, new_x, new_y)
 
-Incorporate observations `new_ys` at points `new_xs` into the surrogate `s`.
-
-Implementations usually mutate and return `s`. For deterministic surrogates, `new_ys`
-contains function evaluations or deterministic statistics. For stochastic surrogates,
-`new_ys` contains observed samples from the modeled conditional distribution.
+Incorporate paired observations into `surrogate` in place.
 
 # Arguments
 
-  - `s`: surrogate to refit or update.
-  - `new_xs`: input points to add to `s`.
-  - `new_ys`: observed values corresponding to `new_xs`.
+  - `surrogate`: an [`AbstractDeterministicSurrogate`](@ref) or
+    [`AbstractStochasticSurrogate`](@ref) concrete implementation to update.
+  - `new_x`: one input or a batch of input locations accepted by the concrete implementation.
+  - `new_y`: observed value or values paired with `new_x`.
 
-Use `update!(s, eachslice(X; dims = 2), new_ys)` when columns of a matrix `X` are the input
-points.
+# Interface Contract
+
+Concrete surrogate implementations must extend `update!` for their own subtype. For batched
+updates, `new_x` and `new_y` must encode the same number of observations in the same order. For
+single-observation updates, they must encode one paired input and value. The method must update the
+surrogate state; no particular return value is part of this interface.
 
 # Examples
 
 ```jldoctest
 julia> mutable struct UpdateExampleSurrogate <: AbstractDeterministicSurrogate
-           xs::Vector{Float64}
-           ys::Vector{Float64}
+           values::Vector{Float64}
        end
 
-julia> (s::UpdateExampleSurrogate)(xs) = fill(last(s.ys), length(xs));
+julia> (surrogate::UpdateExampleSurrogate)(x) = last(surrogate.values);
 
-julia> function SurrogatesBase.update!(s::UpdateExampleSurrogate, new_xs, new_ys)
-           append!(s.xs, new_xs)
-           append!(s.ys, new_ys)
-           return s
+julia> function SurrogatesBase.update!(surrogate::UpdateExampleSurrogate, new_x, new_y)
+           append!(surrogate.values, new_y)
+           return nothing
        end;
 
-julia> surrogate = UpdateExampleSurrogate(Float64[], Float64[]);
+julia> surrogate = UpdateExampleSurrogate(Float64[]);
 
-julia> update!(surrogate, [1.0, 2.0], [3.0, 4.0]) === surrogate
-true
-
-julia> surrogate.ys
-2-element Vector{Float64}:
- 3.0
- 4.0
+julia> update!(surrogate, [1.0, 2.0], [3.0, 4.0]); surrogate(0.0)
+4.0
 ```
 """
 function update! end
 
 """
-    parameters(s)
+    parameters(surrogate)
 
-Return the current learned parameter values of the surrogate `s`.
+Return learned parameters or fitted state exposed by `surrogate`.
 
-This is an optional interface method for surrogate implementations that expose fitted
-parameters separately from tunable hyperparameters.
+# Arguments
+
+  - `surrogate`: a concrete surrogate implementation that documents this optional method.
+
+# Returns
+
+An implementation-defined representation of learned parameters or fitted state. The returned object
+may be a scalar, tuple, named tuple, array, or model object.
+
+# Interface Contract
+
+`parameters` is optional. Extend it only for concrete surrogate subtypes that expose learned state;
+calling it for a subtype without a method raises a `MethodError`.
 
 # Examples
 
 ```jldoctest
 julia> struct ParameterExampleSurrogate <: AbstractDeterministicSurrogate
-           weights::Vector{Float64}
+           weight::Float64
        end
 
-julia> (s::ParameterExampleSurrogate)(xs) = fill(sum(s.weights), length(xs));
+julia> (surrogate::ParameterExampleSurrogate)(x) = surrogate.weight * x;
 
-julia> SurrogatesBase.parameters(s::ParameterExampleSurrogate) = s.weights;
+julia> SurrogatesBase.parameters(surrogate::ParameterExampleSurrogate) = (; weight = surrogate.weight);
 
-julia> parameters(ParameterExampleSurrogate([1.0, 2.0]))
-2-element Vector{Float64}:
- 1.0
- 2.0
+julia> parameters(ParameterExampleSurrogate(2.0))
+(weight = 2.0,)
 ```
 """
 function parameters end
 
 """
-    update_hyperparameters!(s, prior)
+    update_hyperparameters!(surrogate, prior)
 
-Update tunable hyperparameters of the surrogate `s` using information in `prior`.
-
-Implementations usually mutate and return `s`. After changing hyperparameters, the
-surrogate should be refit to its existing observations when the hyperparameters affect the
-fitted representation.
+Update the tunable fitting configuration of `surrogate` in place.
 
 # Arguments
 
-  - `s`: surrogate whose hyperparameters are updated.
-  - `prior`: implementation-defined prior, bounds, or configuration used by the update.
+  - `surrogate`: a concrete surrogate implementation with tunable hyperparameters.
+  - `prior`: implementation-defined prior, bounds, or optimization configuration.
+
+# Interface Contract
+
+This optional method must leave `surrogate` consistent with its updated hyperparameters. If those
+hyperparameters affect the fitted representation, the implementation must refit or invalidate that
+representation before subsequent evaluation. The return value is not part of the interface.
 
 # Examples
 
 ```jldoctest
-julia> mutable struct HyperparameterUpdateExample <: AbstractDeterministicSurrogate
+julia> mutable struct HyperparameterExample <: AbstractDeterministicSurrogate
            scale::Float64
        end
 
-julia> (s::HyperparameterUpdateExample)(xs) = fill(s.scale, length(xs));
+julia> (surrogate::HyperparameterExample)(x) = surrogate.scale * x;
 
-julia> function SurrogatesBase.update_hyperparameters!(s::HyperparameterUpdateExample, prior)
-           s.scale = (s.scale + prior.scale) / 2
-           return s
+julia> function SurrogatesBase.update_hyperparameters!(surrogate::HyperparameterExample, prior)
+           surrogate.scale = prior.scale
+           return nothing
        end;
 
-julia> surrogate = HyperparameterUpdateExample(2.0);
+julia> surrogate = HyperparameterExample(2.0);
 
-julia> update_hyperparameters!(surrogate, (; scale = 4.0)) === surrogate
-true
-
-julia> surrogate.scale
-3.0
+julia> update_hyperparameters!(surrogate, (; scale = 4.0)); surrogate(0.5)
+2.0
 ```
-
-See also [`hyperparameters`](@ref).
 """
 function update_hyperparameters! end
 
 """
-    hyperparameters(s)
+    hyperparameters(surrogate)
 
-Return the current tunable hyperparameter values of the surrogate `s`.
+Return the tunable fitting configuration exposed by `surrogate`.
 
-This is an optional interface method for surrogate implementations with configuration
-values that control fitting or posterior construction.
+# Arguments
+
+  - `surrogate`: a concrete surrogate implementation that documents this optional method.
+
+# Returns
+
+An implementation-defined representation of tunable configuration, commonly a named tuple or a
+small immutable configuration object.
+
+# Interface Contract
+
+`hyperparameters` is optional. When both this method and [`update_hyperparameters!`](@ref) are
+implemented, the returned configuration must describe the setting used for subsequent evaluations.
 
 # Examples
 
 ```jldoctest
 julia> struct HyperparameterReadExample <: AbstractDeterministicSurrogate
-           settings::NamedTuple
+           scale::Float64
        end
 
-julia> (s::HyperparameterReadExample)(xs) = fill(s.settings.scale, length(xs));
+julia> (surrogate::HyperparameterReadExample)(x) = surrogate.scale * x;
 
-julia> SurrogatesBase.hyperparameters(s::HyperparameterReadExample) = s.settings;
+julia> SurrogatesBase.hyperparameters(surrogate::HyperparameterReadExample) =
+           (; scale = surrogate.scale);
 
-julia> hyperparameters(HyperparameterReadExample((; scale = 2.0)))
+julia> hyperparameters(HyperparameterReadExample(2.0))
 (scale = 2.0,)
 ```
-
-See also [`update_hyperparameters!`](@ref).
 """
 function hyperparameters end
 
 """
-    finite_posterior(s::AbstractStochasticSurrogate, xs::AbstractVector)
+    finite_posterior(surrogate, xs)
 
-Return a finite-dimensional posterior object at points `xs`.
+Construct the finite-dimensional posterior represented by `surrogate` at query inputs `xs`.
 
-The returned object represents the joint posterior over the requested points. An
-`AbstractStochasticSurrogate` implementation may support some or all of the following
-methods on that object:
+# Arguments
 
-  - `mean(finite_posterior(s, xs))`: posterior means at `xs`.
-  - `var(finite_posterior(s, xs))`: posterior variances at `xs`.
-  - `mean_and_var(finite_posterior(s, xs))`: posterior means and variances at `xs`.
-  - `rand(finite_posterior(s, xs))`: a sample from the joint posterior at `xs`.
+  - `surrogate`: an [`AbstractStochasticSurrogate`](@ref) concrete implementation.
+  - `xs`: query inputs in a representation accepted by that implementation.
 
-Use `mean(finite_posterior(s, eachslice(X; dims = 2)))` when columns of a matrix `X` are
-the input points.
+# Returns
+
+An implementation-defined posterior object for the requested query inputs. Concrete implementations
+must document the statistical operations they support, for example `Statistics.mean`,
+`Statistics.var`, or `rand`.
+
+# Interface Contract
+
+Concrete stochastic surrogate implementations must extend this function for their own subtype. The
+posterior must preserve correspondence with `xs`; for a batch, the returned statistics and samples
+must use the same query ordering. This function has no fallback implementation.
 
 # Examples
 
@@ -243,10 +290,10 @@ julia> struct PosteriorExample
            means::Vector{Float64}
        end
 
-julia> Statistics.mean(p::PosteriorExample) = p.means;
+julia> Statistics.mean(posterior::PosteriorExample) = posterior.means;
 
-julia> function SurrogatesBase.finite_posterior(s::PosteriorExampleSurrogate, xs)
-           return PosteriorExample(fill(s.value, length(xs)))
+julia> function SurrogatesBase.finite_posterior(surrogate::PosteriorExampleSurrogate, xs)
+           PosteriorExample(fill(surrogate.value, length(xs)))
        end;
 
 julia> posterior = finite_posterior(PosteriorExampleSurrogate(1.25), [0.0, 1.0]);

@@ -1,6 +1,7 @@
-# API
+# Public API
 
 ```@docs
+SurrogatesBase
 SurrogatesBase.AbstractDeterministicSurrogate
 SurrogatesBase.AbstractStochasticSurrogate
 SurrogatesBase.update!

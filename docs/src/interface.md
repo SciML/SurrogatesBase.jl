@@ -1,128 +1,80 @@
-# The SurrogateBase Interface
+# Extending SurrogatesBase
+
+SurrogatesBase defines the small public contract shared by deterministic and stochastic surrogate
+packages. It supplies interface tags and generic functions only; concrete packages own fitting,
+evaluation, posterior representations, and data storage.
 
 ## Deterministic Surrogates
 
-Deterministic surrogates `s` are subtypes of `SurrogatesBase.AbstractDeterministicSurrogate`, 
-which is a subtype of `Function`.
+A deterministic implementation subtypes [`AbstractDeterministicSurrogate`](@ref) and is callable.
+The minimum interface is:
 
-### Required methods
+```julia
+(surrogate)(x)
+update!(surrogate, new_x, new_y)
+```
 
-The method `update!(s, xs, ys)` **must** be implemented and the surrogate **must** be
-[callable](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects)
-`s(xs)`, where `xs` is a `Vector` of input points and `ys` is a `Vector` of corresponding evaluations.
+`x` can be a scalar, one point, or a batch, according to the concrete package's documented domain.
+The base interface does not impose a container representation. A batch call must preserve the
+correspondence between its inputs and predictions.
 
-Calling `update!(s, xs, ys)` refits the surrogate `s` to include evaluations `ys` at points `xs`.
-The result of `s(xs)` is a `Vector` of evaluations of the surrogate at points `xs`, corresponding to approximations of the underlying function at points `xs` respectively.
+`update!` is in place. `new_x` and `new_y` represent matching observations: a batch has the same
+number of locations and values in the same order, and a scalar update represents exactly one pair.
+Implementations may return `nothing`, the updated surrogate, or another implementation-specific
+value. Generic code must inspect the mutated surrogate instead of relying on that return value.
 
-For single points `x` and `y`, call these methods via `update!(s, [x], [y])`
-and `s([x])`.
-
-### Optional methods
-
-If the surrogate `s` wants to expose current parameter values, the method `parameters(s)` **must** be implemented.
-
-If the surrogate `s` has tunable hyperparameters, the methods
-`update_hyperparameters!(s, prior)` and `hyperparameters(s)` **must** be implemented.
-
-Calling `update_hyperparameters!(s, prior)` updates the hyperparameters of the surrogate `s` by performing hyperparameter optimization using the information in `prior`. After the hyperparameters of `s` are updated, `s` is fit to past evaluations.
-Calling `hyperparameters(s)` returns current values of hyperparameters.
-
-### Example
+An implementation may additionally expose [`parameters`](@ref), [`hyperparameters`](@ref), and
+[`update_hyperparameters!`](@ref). These are optional, so consumers should only call them when a
+concrete surrogate documents support.
 
 ```julia
 using SurrogatesBase
 
-struct RBF{T} <: AbstractDeterministicSurrogate
-    scale::T
-    centers::Vector{T}
-    weights::Vector{T}
+mutable struct LinearMock <: AbstractDeterministicSurrogate
+    slope::Float64
 end
 
-(rbf::RBF)(xs) = [rbf.weights' * exp.(-rbf.scale * (x .- rbf.centers).^2)
-                  for x in xs]
+(surrogate::LinearMock)(x) = surrogate.slope * x
 
-function SurrogatesBase.update!(rbf::RBF, xs, ys)
-    # Refit the surrogate by updating rbf.weights to include new 
-    # evaluations ys at points xs
-    return rbf
-end
-
-SurrogatesBase.parameters(rbf::RBF) = rbf.centers, rbf.weights
-
-SurrogatesBase.hyperparameters(rbf::RBF) = rbf.scale
-
-function SurrogatesBase.update_hyperparameters!(rbf::RBF, prior)
-    # update rbf.scale and fit the surrogate by adapting rbf.weights
-    return rbf
+function SurrogatesBase.update!(surrogate::LinearMock, new_x, new_y)
+    surrogate.slope = last(new_y) / last(new_x)
+    return nothing
 end
 ```
 
 ## Stochastic Surrogates
 
-Stochastic surrogates `s` are subtypes of `SurrogatesBase.AbstractStochasticSurrogate`.
-
-### Required methods
-
-The methods `update!(s, xs, ys)` and `finite_posterior(s, xs)` **must** be implemented, where `xs` is a `Vector` of input points and `ys` is a `Vector` of corresponding observed samples.
-
-Calling `update!(s, xs, ys)` refits the surrogate `s` to include observations `ys` at points `xs`.
-
-For single points `x` and `y`, call the `update!(s, xs, ys)` via `update!(s, [x], [y])`.
-
-Calling `finite_posterior(s, xs)` returns an object that provides methods for  working with the finite 
-dimensional posterior distribution at points `xs`.
-The following methods might be supported:
-
-- `mean(finite_posterior(s,xs))` returns a `Vector` of posterior means at `xs`
-- `var(finite_posterior(s,xs))` returns a `Vector` of posterior variances at `xs`
-- `mean_and_var(finite_posterior(s,xs))` returns a `Tuple` consisting of a `Vector` of posterior means and a `Vector` of posterior variances at `xs`
-- `rand(finite_posterior(s,xs))` returns a `Vector`, which is a sample from the joint posterior at points `xs`
-
-### Optional methods
-
-If the surrogate `s` wants to expose current parameter values, the method `parameters(s)` **must** be implemented.
-
-If the surrogate `s` has tunable hyper-parameters, the methods
-`update_hyperparameters!(s, prior)` and `hyperparameters(s)` **must** be implemented.
-
-Calling `update_hyperparameters!(s, prior)` updates the hyperparameters of the surrogate `s` by performing hyperparameter optimization using the information in `prior`. After the hyperparameters of `s` are updated, `s` is fit to past samples.
-Calling `hyperparameters(s)` returns current values of hyperparameters.
-
-
-### Example
+A stochastic implementation subtypes [`AbstractStochasticSurrogate`](@ref) and implements:
 
 ```julia
+update!(surrogate, new_x, new_y)
+finite_posterior(surrogate, xs)
+```
+
+The update rules are the same as for deterministic surrogates. `finite_posterior` receives query
+inputs in a concrete implementation's documented representation and returns that implementation's
+finite-dimensional posterior object. That object must preserve the query ordering and document the
+operations it supports, such as `Statistics.mean`, `Statistics.var`, or `rand`.
+
+```julia
+using Statistics
 using SurrogatesBase
 
-mutable struct GaussianProcessSurrogate{D, R, GP, H <: NamedTuple} <: AbstractStochasticSurrogate
-    xs::Vector{D}
-    ys::Vector{R}
-    gp_process::GP
-    hyperparameters::H
+mutable struct ConstantPosteriorSurrogate <: AbstractStochasticSurrogate
+    mean_value::Float64
 end
 
-function SurrogatesBase.update!(g::GaussianProcessSurrogate, new_xs, new_ys)
-    append!(g.xs, new_xs)
-    append!(g.ys, new_ys)
-    # condition the prior `g.gp_process` on new data to obtain a posterior
-    # update g.gp_process to the posterior process
-    return g
+struct ConstantPosterior
+    means::Vector{Float64}
 end
 
-function SurrogatesBase.finite_posterior(g::GaussianProcessSurrogate, xs)
-    # Return a finite dimensional projection of g.gp_process at points xs.
-    # The returned object GP_finite supports methods mean(GP_finite) and
-    # var(GP_finite) for obtaining the vector of means and variances at points xs.
-end
+Statistics.mean(posterior::ConstantPosterior) = posterior.means
 
-SurrogatesBase.hyperparameters(g::GaussianProcessSurrogate) = g.hyperparameters
-
-function SurrogatesBase.update_hyperparameters!(g::GaussianProcessSurrogate, prior)
-    # Use prior on hyperparameters, e.g., parameters uniformly distributed 
-    # between an upper and lower bound, to perform hyperparameter optimization.
-    # Set g.hyperparameters to the improved hyperparameters.
-    # Fit a Gaussian process that uses the updated hyperparameters to past
-    # samples and save it in g.gp_process.
-    return g
+function SurrogatesBase.finite_posterior(surrogate::ConstantPosteriorSurrogate, xs)
+    return ConstantPosterior(fill(surrogate.mean_value, length(xs)))
 end
 ```
+
+The package test suite validates these rules using mock subtypes that are driven only through the
+public SurrogatesBase functions. This keeps the extension contract independent of implementation
+details from any concrete surrogate package.

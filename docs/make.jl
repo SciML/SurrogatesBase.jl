@@ -6,13 +6,10 @@ DocMeta.setdocmeta!(
     :(using SurrogatesBase)
 )
 
-cp("./docs/Manifest.toml", "./docs/src/assets/Manifest.toml", force = true)
-cp("./docs/Project.toml", "./docs/src/assets/Project.toml", force = true)
-
 pages = [
     "Home" => "index.md",
-    "interface.md",
-    "api.md",
+    "Developer Interface" => "interface.md",
+    "Public API" => "api.md",
 ]
 
 ENV["GKSwstype"] = "100"
@@ -21,6 +18,7 @@ makedocs(
     modules = [SurrogatesBase],
     sitename = "SurrogatesBase.jl",
     clean = true,
+    checkdocs = :exports,
     doctest = true,
     linkcheck = true,
     format = Documenter.HTML(
