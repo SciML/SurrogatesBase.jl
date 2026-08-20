@@ -8,6 +8,8 @@ developer interface guide for extension rules.
 """
 module SurrogatesBase
 
+using PrecompileTools: @compile_workload, @setup_workload
+
 export AbstractDeterministicSurrogate
 export AbstractStochasticSurrogate
 export update!, parameters
@@ -305,5 +307,15 @@ julia> mean(posterior)
 ```
 """
 function finite_posterior end
+
+@setup_workload begin
+    @compile_workload begin
+        typeof(AbstractDeterministicSurrogate)
+        typeof(AbstractStochasticSurrogate)
+        typeof(update!)
+        typeof(parameters)
+        typeof(finite_posterior)
+    end
+end
 
 end
